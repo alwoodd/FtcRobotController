@@ -1,21 +1,21 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import java.util.List;
 
 /**
- * This 2023-2024 OpMode show a way to detect an image,
+ * This 2023-2024 OpMode shows a way to detect an image,
  * determine the position number it is in, then move
  * the robot to it.
  */
-@TeleOp(name = "Detect image and move robot to it", group = "")
+@Autonomous(name = "Detect image and move robot to it", group = "")
 public class CenterstageAutonomous extends LinearOpMode {
 
     @Override
     public void runOpMode() {
-
         RobotHardware robot = new RobotHardware(this);
         robot.init();
 

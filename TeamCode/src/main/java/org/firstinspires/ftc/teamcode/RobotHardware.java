@@ -75,13 +75,16 @@ public class RobotHardware {
     static final double WHEEL_DIAMETER_INCHES = 4.0;     // For figuring circumference
     static final double COUNTS_PER_INCH = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
             (WHEEL_DIAMETER_INCHES * 3.1415);
-    static final double DEFAULT_WHEEL_MOTOR_SPEED = .4;
+    public static final double DEFAULT_WHEEL_MOTOR_SPEED = .4;
     public static final double MID_SERVO       =  0.5 ;
     public static final double HAND_SPEED      =  0.02 ;  // sets rate to move servo
     public static final double ARM_UP_POWER    =  0.45 ;
     public static final double ARM_DOWN_POWER  = -0.45 ;
 
-    // The one and only constructor requires a reference to an OpMode.
+    /**
+     * The one and only constructor requires a reference to an OpMode.
+     * @param opmode
+     */
     public RobotHardware(LinearOpMode opmode) {
         myOpMode = opmode;
     }
@@ -246,8 +249,9 @@ public class RobotHardware {
         Telemetry.Item rightRearWheelItem = myOpMode.telemetry.addData("RR Wheel", rightRearWheel.getCurrentPosition());
         myOpMode.telemetry.update();
 
-        // Power all wheels for as long as they are busy.
         setPowerAllWheels(speed);
+
+        // Update telemetry for as long as the wheel motors isBusy().
         while (leftFrontWheel.isBusy() && leftRearWheel.isBusy() && rightFrontWheel.isBusy() && rightRearWheel.isBusy()) {
             leftFrontWheelItem.setValue(leftFrontWheel.getCurrentPosition());
             leftRearWheelItem.setValue(leftRearWheel.getCurrentPosition());
@@ -256,6 +260,7 @@ public class RobotHardware {
             myOpMode.telemetry.update();
         }
 
+        //Robot has RUN_TO_POSITION.
         setPowerAllWheels(0); //Whoa.
         myOpMode.telemetry.setAutoClear(true);
     }
@@ -292,50 +297,34 @@ public class RobotHardware {
         rightRearWheel.setPower(absoluteSpeed);
     }
 
-    public List<Recognition> getFreshTfodRecognitions() {
-        return tfod.getFreshRecognitions();
-    }
-
     /**
-     * Calculates the left/right motor powers required to achieve the requested
-     * robot motions: Drive (Axial motion) and Turn (Yaw motion).
-     * Then sends these power levels to the motors.
-     *
-     * @param Drive     Fwd/Rev driving power (-1.0 to 1.0) +ve is forward
-     * @param Turn      Right/Left turning power (-1.0 to 1.0) +ve is CW
+     * Drive robot according to passed stick inputs.
+     * @param stick1X Value from stick 1's X axis
+     * @param stick1Y Value from stick 1's Y axis
+     * @param stick2X Value from stick 2's X axis
      */
-/*
-    public void manuallyDriveRobot(double Drive, double Turn) {
-        // Combine drive and turn for blended motion.
-        double left  = Drive + Turn;
-        double right = Drive - Turn;
-
-        // Scale the values so neither exceed +/- 1.0
-        double max = Math.max(Math.abs(left), Math.abs(right));
-        if (max > 1.0)
-        {
-            left /= max;
-            right /= max;
-        }
-
-        // Use existing function to drive both wheels.
-        setDrivePower(left, right);
+    public void manuallyDriveRobot(double stick1X, double stick1Y, double stick2X) {
+        double vectorLength = Math.hypot(stick1X, stick1Y);
+        double robotAngle = Math.atan2(stick1Y, -stick1X) - Math.PI / 4;
+        double rightXscale = stick2X * .5;
+        final double rightFrontVelocity = vectorLength * Math.cos(robotAngle) + rightXscale;
+        final double leftFrontVelocity = vectorLength * Math.sin(robotAngle) - rightXscale;
+        final double rightRearVelocity = vectorLength * Math.sin(robotAngle) + rightXscale;
+        final double leftRearVelocity = vectorLength * Math.cos(robotAngle) - rightXscale;
+        // Use existing method to drive both wheels.
+        setDrivePower(leftFrontVelocity, rightFrontVelocity, leftRearVelocity, rightRearVelocity);
     }
-*/
 
     /**
      * Pass the requested wheel motor powers to the appropriate hardware drive motors.
-     *
-     * @param leftWheel     Fwd/Rev driving power (-1.0 to 1.0) +ve is forward
-     * @param rightWheel    Fwd/Rev driving power (-1.0 to 1.0) +ve is forward
      */
-/*
-    public void setDrivePower(double leftWheel, double rightWheel) {
+    public void setDrivePower(double leftFrontPower, double rightFrontPower, double leftRearPower, double rightRearPower) {
         // Output the values to the motor drives.
-        leftDrive.setPower(leftWheel);
-        rightDrive.setPower(rightWheel);
+        leftFrontWheel.setPower(leftFrontPower);
+        rightFrontWheel.setPower(rightFrontPower);
+        leftRearWheel.setPower(leftRearPower);
+        rightRearWheel.setPower(rightRearPower);
     }
-*/
 
     /**
      * Pass the requested arm power to the appropriate hardware drive motor
@@ -355,5 +344,21 @@ public class RobotHardware {
         offset = Range.clip(offset, -0.5, 0.5);
         leftHand.setPosition(MID_SERVO + offset);
         rightHand.setPosition(MID_SERVO - offset);
+    }
+
+    /**
+     * Gets a list containing recognitions that were detected since the last call to this method, or null if no new recognitions are available.
+     * @return
+     */
+    public List<Recognition> getFreshTfodRecognitions() {
+        return tfod.getFreshRecognitions();
+    }
+
+
+    /**
+     * Move XYZ servo so that drone is released.
+     */
+    public void releaseDrone() {
+        //Move whichever servo(?).
     }
 }
