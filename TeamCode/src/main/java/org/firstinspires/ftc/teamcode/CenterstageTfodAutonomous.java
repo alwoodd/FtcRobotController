@@ -2,7 +2,7 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import java.util.List;
 
@@ -12,7 +12,7 @@ import java.util.List;
  * the robot to it.
  */
 @Autonomous(name = "Detect image and move robot to it", group = "")
-public class CenterstageAutonomous extends LinearOpMode {
+public class CenterstageTfodAutonomous extends LinearOpMode {
 
     @Override
     public void runOpMode() {

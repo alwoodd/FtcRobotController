@@ -31,15 +31,19 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
+import com.qualcomm.robotcore.hardware.HardwareDevice;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.tfod.TfodProcessor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -61,13 +65,13 @@ public class RobotHardware {
     private DcMotor leftRearWheel;
     private DcMotor rightRearWheel;
     private WebcamName webCam;
-
-    // Define other HardwareDevices as needed.
     private DcMotor armMotor;
     private Servo   leftHand;
     private Servo   rightHand;
     private TfodProcessor tfod;
     private VisionPortal visionPortal;
+    private DistanceSensor centerDistanceSensor;
+    private DistanceSensor sideDistanceSensor;
 
     // Define Drive constants.  Make them public so they CAN be used by the calling OpMode
     static final double COUNTS_PER_MOTOR_REV = 560;
@@ -81,6 +85,9 @@ public class RobotHardware {
     public static final double ARM_UP_POWER    =  0.45 ;
     public static final double ARM_DOWN_POWER  = -0.45 ;
 
+    // Add all HardwareDevices to this List within their individual init methods.
+    private List<HardwareDevice> hardwareDevicesToClose = null;
+
     /**
      * The one and only constructor requires a reference to an OpMode.
      * @param opmode
@@ -93,10 +100,12 @@ public class RobotHardware {
      * Call init() to initialize all the robot's hardware.
      */
     public void init() {
+        hardwareDevicesToClose = new ArrayList<>();
         initWheelMotors();
         initServos();
         initTfod();
         initVisionPortal();
+        initDistanceSensors();
 
         myOpMode.telemetry.addData(">", "Hardware Initialized");
         myOpMode.telemetry.update();
@@ -108,6 +117,10 @@ public class RobotHardware {
     public void shutDown() {
         tfod.shutdown();
         visionPortal.close();
+
+        for (HardwareDevice hardwareDevice : hardwareDevicesToClose) {
+            hardwareDevice.close();
+        }
     }
     /**
      * Initialize all the wheel motors.
@@ -121,8 +134,10 @@ public class RobotHardware {
         rightFrontWheel = myOpMode.hardwareMap.get(DcMotor.class, "RFront");
         leftRearWheel = myOpMode.hardwareMap.get(DcMotor.class, "LRear");
         rightRearWheel = myOpMode.hardwareMap.get(DcMotor.class, "RRear");
-
-        armMotor   = myOpMode.hardwareMap.get(DcMotor.class, "arm");
+        hardwareDevicesToClose.add(leftFrontWheel);
+        hardwareDevicesToClose.add(rightFrontWheel);
+        hardwareDevicesToClose.add(leftRearWheel);
+        hardwareDevicesToClose.add(rightRearWheel);
 
         // To drive forward, most robots need the motors on one side to be reversed, because the axles point in opposite directions.
         // Note: The settings here assume direct drive on left and right wheels.  Gear Reduction or 90 Deg drives may require direction flips
@@ -153,6 +168,12 @@ public class RobotHardware {
         rightHand = myOpMode.hardwareMap.get(Servo.class, "right_hand");
         leftHand.setPosition(MID_SERVO);
         rightHand.setPosition(MID_SERVO);
+
+        armMotor   = myOpMode.hardwareMap.get(DcMotor.class, "arm");
+
+        hardwareDevicesToClose.add(leftHand);
+        hardwareDevicesToClose.add(rightHand);
+        hardwareDevicesToClose.add(armMotor);
     }
 
     /**
@@ -215,6 +236,18 @@ public class RobotHardware {
 
                 // Build the Vision Portal, using the above settings.
                 .build();
+    }
+
+
+    /**
+     * Initialize distance sensor(s).
+     */
+    private void initDistanceSensors() {
+        centerDistanceSensor = myOpMode.hardwareMap.get(DistanceSensor.class, "centerDistanceSensor");
+        sideDistanceSensor = myOpMode.hardwareMap.get(DistanceSensor.class, "sideDistanceSensor");
+
+        hardwareDevicesToClose.add(centerDistanceSensor);
+        hardwareDevicesToClose.add(sideDistanceSensor);
     }
 
     /**
@@ -359,6 +392,52 @@ public class RobotHardware {
      * Move XYZ servo so that drone is released.
      */
     public void releaseDrone() {
-        //Move whichever servo(?).
+        //Move whichever servo or other HardwareDevice.
+    }
+
+    /**
+     * Return distance detected by Center Sensor in CM.
+     * @return distance in CM
+     */
+    public double getCenterSensorDistanceInCM() {
+        return centerDistanceSensor.getDistance(DistanceUnit.CM);
+    }
+
+    /**
+     * Return distance detected by Center Sensor,
+     * using whatever DistanceUnit is passed in.
+     * Available units:
+     *    DistanceUnit.MM
+     *    DistanceUnit.CM
+     *    DistanceUnit.METER
+     *    DistanceUnit.INCH
+     * @param distanceUnit
+     * @return
+     */
+    public double getCenterSensorDistance(DistanceUnit distanceUnit) {
+        return centerDistanceSensor.getDistance(distanceUnit);
+    }
+
+    /**
+     * Return distance detected by Side Sensor in CM.
+     * @return distance in CM
+     */
+    public double getSideSensorDistanceInCM() {
+        return sideDistanceSensor.getDistance(DistanceUnit.CM);
+    }
+
+    /**
+     * Return distance detected by Side Sensor,
+     * using whatever DistanceUnit is passed in.
+     * Available units:
+     *    DistanceUnit.MM
+     *    DistanceUnit.CM
+     *    DistanceUnit.METER
+     *    DistanceUnit.INCH
+     * @param distanceUnit
+     * @return
+     */
+    public double getSideSensorDistance(DistanceUnit distanceUnit) {
+        return sideDistanceSensor.getDistance(distanceUnit);
     }
 }
