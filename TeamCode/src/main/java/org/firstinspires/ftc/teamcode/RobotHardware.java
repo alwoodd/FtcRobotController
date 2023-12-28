@@ -30,9 +30,10 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.AnalogInput;
+import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
-import com.qualcomm.robotcore.hardware.HardwareDevice;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.Range;
 
@@ -43,7 +44,6 @@ import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.tfod.TfodProcessor;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -64,20 +64,23 @@ public class RobotHardware {
     private DcMotor rightFrontWheel;
     private DcMotor leftRearWheel;
     private DcMotor rightRearWheel;
+    private DcMotor leftArm;
+    private DcMotor rightArm;
     private WebcamName webCam;
-    private DcMotor armMotor;
     private Servo   leftHand;
     private Servo   rightHand;
     private TfodProcessor tfod;
     private VisionPortal visionPortal;
     private DistanceSensor centerDistanceSensor;
     private DistanceSensor sideDistanceSensor;
+    private ColorSensor colorSensor;
+    private AnalogInput potentiometer;
 
     // Define Drive constants.  Make them public so they CAN be used by the calling OpMode
     static final double COUNTS_PER_MOTOR_REV = 560;
     static final double DRIVE_GEAR_REDUCTION = 1.0;     // This is < 1.0 if geared UP
     static final double WHEEL_DIAMETER_INCHES = 4.0;     // For figuring circumference
-    static final double COUNTS_PER_INCH = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
+    static final double WHEEL_COUNTS_PER_INCH = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
             (WHEEL_DIAMETER_INCHES * 3.1415);
     public static final double DEFAULT_WHEEL_MOTOR_SPEED = .4;
     public static final double MID_SERVO       =  0.5 ;
@@ -85,8 +88,17 @@ public class RobotHardware {
     public static final double ARM_UP_POWER    =  0.45 ;
     public static final double ARM_DOWN_POWER  = -0.45 ;
 
-    // Add all HardwareDevices to this List within their individual init methods.
-    private List<HardwareDevice> hardwareDevicesToClose = null;
+    public static final double MAX_POTENTIOMETER_ANGLE = 270;
+    /**
+     * You can set the arm positions using angles and/or potentiometer voltage.
+     * Tune these values for your robot's actual values.
+     */
+    public static final double ARM_PARKED_ANGLE = 0;
+    public static final double ARM_PIXEL_PICKUP_ANGLE = 200;
+    public static final double ARM_BACKDROP_ANGLE = 100;
+    public static final double ARM_PARKED_VOLTAGE = 0;
+    public static final double ARM_PIXEL_PICKUP_VOLTAGE = 3;
+    public static final double ARM_BACKDROP_VOLTAGE = 1.4;
 
     /**
      * The one and only constructor requires a reference to an OpMode.
@@ -100,12 +112,14 @@ public class RobotHardware {
      * Call init() to initialize all the robot's hardware.
      */
     public void init() {
-        hardwareDevicesToClose = new ArrayList<>();
         initWheelMotors();
         initServos();
         initTfod();
         initVisionPortal();
         initDistanceSensors();
+        initColorSensor();
+        initAnalogInputs();
+        initArmMotors();
 
         myOpMode.telemetry.addData(">", "Hardware Initialized");
         myOpMode.telemetry.update();
@@ -117,10 +131,6 @@ public class RobotHardware {
     public void shutDown() {
         tfod.shutdown();
         visionPortal.close();
-
-        for (HardwareDevice hardwareDevice : hardwareDevicesToClose) {
-            hardwareDevice.close();
-        }
     }
     /**
      * Initialize all the wheel motors.
@@ -134,10 +144,6 @@ public class RobotHardware {
         rightFrontWheel = myOpMode.hardwareMap.get(DcMotor.class, "RFront");
         leftRearWheel = myOpMode.hardwareMap.get(DcMotor.class, "LRear");
         rightRearWheel = myOpMode.hardwareMap.get(DcMotor.class, "RRear");
-        hardwareDevicesToClose.add(leftFrontWheel);
-        hardwareDevicesToClose.add(rightFrontWheel);
-        hardwareDevicesToClose.add(leftRearWheel);
-        hardwareDevicesToClose.add(rightRearWheel);
 
         // To drive forward, most robots need the motors on one side to be reversed, because the axles point in opposite directions.
         // Note: The settings here assume direct drive on left and right wheels.  Gear Reduction or 90 Deg drives may require direction flips
@@ -146,11 +152,10 @@ public class RobotHardware {
         rightFrontWheel.setDirection(DcMotor.Direction.REVERSE);
         rightRearWheel.setDirection(DcMotor.Direction.REVERSE);
 
-        // If there are encoders connected, switch to RUN_USING_ENCODER mode for greater accuracy
-        leftFrontWheel.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        rightFrontWheel.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        leftRearWheel.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        rightRearWheel.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        // If there are encoders connected, switch to RUN_USING_ENCODER mode for greater accuracy.
+        // Beware that autoDriveRobot() will set run mode to RUN_TO_POSITION). However,
+        // usages of autoDriveRobot() s/b mutually-exclusive with usages of manuallyDriveRobot().
+        setRunModeForAllWheels(DcMotor.RunMode.RUN_USING_ENCODER);
 
         // Set wheel motors to not resist turning when motor is stopped.
         leftFrontWheel.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
@@ -168,12 +173,6 @@ public class RobotHardware {
         rightHand = myOpMode.hardwareMap.get(Servo.class, "right_hand");
         leftHand.setPosition(MID_SERVO);
         rightHand.setPosition(MID_SERVO);
-
-        armMotor   = myOpMode.hardwareMap.get(DcMotor.class, "arm");
-
-        hardwareDevicesToClose.add(leftHand);
-        hardwareDevicesToClose.add(rightHand);
-        hardwareDevicesToClose.add(armMotor);
     }
 
     /**
@@ -245,9 +244,19 @@ public class RobotHardware {
     private void initDistanceSensors() {
         centerDistanceSensor = myOpMode.hardwareMap.get(DistanceSensor.class, "centerDistanceSensor");
         sideDistanceSensor = myOpMode.hardwareMap.get(DistanceSensor.class, "sideDistanceSensor");
+    }
 
-        hardwareDevicesToClose.add(centerDistanceSensor);
-        hardwareDevicesToClose.add(sideDistanceSensor);
+    private void initColorSensor() {
+        colorSensor = myOpMode.hardwareMap.get(ColorSensor.class, "colorSensor");
+    }
+
+    private void initAnalogInputs() {
+        potentiometer = myOpMode.hardwareMap.get(AnalogInput.class, "potentiometer");
+    }
+
+    private void initArmMotors() {
+        leftArm = myOpMode.hardwareMap.get(DcMotor.class, "leftArm");
+        rightArm = myOpMode.hardwareMap.get(DcMotor.class, "rightArm");
     }
 
     /**
@@ -258,8 +267,8 @@ public class RobotHardware {
      * @param speed
      */
     public void autoDriveRobot(int leftInches, int rightInches, double speed) {
-        int leftInchesToCPI = (int) (leftInches * COUNTS_PER_INCH);
-        int rightInchesToCPI = (int) (rightInches * COUNTS_PER_INCH);
+        int leftInchesToCPI = (int) (leftInches * WHEEL_COUNTS_PER_INCH);
+        int rightInchesToCPI = (int) (rightInches * WHEEL_COUNTS_PER_INCH);
 
         int leftFrontTarget = leftFrontWheel.getCurrentPosition() + leftInchesToCPI;
         int leftRearTarget = leftFrontWheel.getCurrentPosition() + leftInchesToCPI;
@@ -340,9 +349,9 @@ public class RobotHardware {
         double vectorLength = Math.hypot(stick1X, stick1Y);
         double robotAngle = Math.atan2(stick1Y, -stick1X) - Math.PI / 4;
         double rightXscale = stick2X * .5;
-        final double rightFrontVelocity = vectorLength * Math.cos(robotAngle) + rightXscale;
-        final double leftFrontVelocity = vectorLength * Math.sin(robotAngle) - rightXscale;
-        final double rightRearVelocity = vectorLength * Math.sin(robotAngle) + rightXscale;
+        double rightFrontVelocity = vectorLength * Math.cos(robotAngle) + rightXscale;
+        double leftFrontVelocity = vectorLength * Math.sin(robotAngle) - rightXscale;
+        double rightRearVelocity = vectorLength * Math.sin(robotAngle) + rightXscale;
         final double leftRearVelocity = vectorLength * Math.cos(robotAngle) - rightXscale;
         // Use existing method to drive both wheels.
         setDrivePower(leftFrontVelocity, rightFrontVelocity, leftRearVelocity, rightRearVelocity);
@@ -365,9 +374,14 @@ public class RobotHardware {
      * @param power driving power (-1.0 to 1.0)
      */
     public void setArmPower(double power) {
-        armMotor.setPower(power);
+        leftArm.setPower(power);
+        rightArm.setPower(power);
     }
 
+    public void setRunModeForAllArms(DcMotor.RunMode runMode) {
+        leftArm.setMode(runMode);
+        rightArm.setMode(runMode);
+    }
     /**
      * Send the two hand-servos to opposing (mirrored) positions, based on the passed offset.
      *
@@ -439,5 +453,131 @@ public class RobotHardware {
      */
     public double getSideSensorDistance(DistanceUnit distanceUnit) {
         return sideDistanceSensor.getDistance(distanceUnit);
+    }
+
+    /**
+     * Return all color values from Color Sensor.
+     * @return RGBAcolor
+     */
+    public RGBAcolors getSensorColors() {
+        int red = colorSensor.red();
+        int green = colorSensor.green();
+        int blue = colorSensor.blue();
+        int alpha = colorSensor.alpha();
+
+        return new RGBAcolors(red, green, blue, alpha);
+    }
+
+    /**
+     * Return potentiometer's current voltage.
+     * @return voltage
+     */
+    public double getPotentiometerVoltage() {
+        return potentiometer.getVoltage();
+    }
+
+    /**
+     * Return calculated angle corresponding to potentiometer's current voltage.
+     * Example: If the potentiometer's maximum voltage is 3.3,
+     *          and it's maximum angle is 270 degrees,
+     *          and the current voltage is 1.65
+     *          then the current angle is 1.65 * 270 / 3.3 = 135 degrees.
+     * @return angle
+     */
+    public double getPotentiometerAngle(double voltage) {
+        return potentiometer.getVoltage() * MAX_POTENTIOMETER_ANGLE / potentiometer.getMaxVoltage();
+    }
+
+    /**
+     * Move arm up or down until it gets to potentiometer's targetVoltage.
+     * @param targetVoltage
+     */
+    public void setArmPositionUsingVoltage(double targetVoltage) {
+        double currentVoltage = potentiometer.getVoltage();
+        setRunModeForAllArms(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        //Ex. If currentVoltage is 1, and targetVoltage is 2, we want to move arm up.
+        //    If currentVoltage is 2, and targetVoltage is 1, we want to move arm down.
+        if (currentVoltage < targetVoltage) {
+            Telemetry.Item currentTelemetryItem = setupArmPositionTelemetry("Target Voltage", targetVoltage, "Current Voltage", currentVoltage);
+            setArmPower(ARM_UP_POWER);
+
+            while (myOpMode.opModeIsActive() && potentiometer.getVoltage() < targetVoltage) {
+                currentTelemetryItem.setValue(potentiometer.getVoltage());
+                myOpMode.telemetry.update();
+            }
+
+            setArmPower(0); //Whoa
+        }
+        else if (currentVoltage > targetVoltage) {
+            Telemetry.Item currentTelemetryItem =  setupArmPositionTelemetry("Target Voltage", targetVoltage, "Current Voltage", currentVoltage);
+            setArmPower(ARM_DOWN_POWER);
+
+            while(myOpMode.opModeIsActive() && potentiometer.getVoltage() > targetVoltage) {
+                currentTelemetryItem.setValue(potentiometer.getVoltage());
+                myOpMode.telemetry.update();
+            }
+
+            setArmPower(0); //Whoa
+        }
+    }
+
+    /**
+     * Move arm up or down until it gets to potentiometer's targetAngle.
+     * @param targetAngle
+     */
+    public void setArmPositionUsingAngle(double targetAngle) {
+        double currentAngle = getPotentiometerAngle(potentiometer.getVoltage());
+        setRunModeForAllArms(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        //Ex. If currentAngle is 100 degrees, and targetAngle is 200 degrees,
+        //    we want to move arm up.
+        //    If currentAngle is 200 degrees, and targetAngle is 100 degrees,
+        //    we want to move arm down.
+        if (currentAngle < targetAngle) {
+            Telemetry.Item currentTelemetryItem = setupArmPositionTelemetry("Target Angle", targetAngle, "Current Angle", currentAngle);
+            setArmPower(ARM_UP_POWER);
+
+            while (myOpMode.opModeIsActive() && getPotentiometerAngle(potentiometer.getVoltage()) < targetAngle) {
+                currentTelemetryItem.setValue(getPotentiometerAngle(potentiometer.getVoltage()));
+                myOpMode.telemetry.update();
+            }
+
+            setArmPower(0); //Whoa
+        }
+        else if (currentAngle > targetAngle) {
+            Telemetry.Item currentTelemetryItem = setupArmPositionTelemetry("Target Angle", targetAngle, "Current Angle", currentAngle);
+            setArmPower(ARM_DOWN_POWER);
+
+            while (myOpMode.opModeIsActive() && getPotentiometerAngle(potentiometer.getVoltage()) > targetAngle) {
+                currentTelemetryItem.setValue(getPotentiometerAngle(potentiometer.getVoltage()));
+                myOpMode.telemetry.update();
+            }
+
+            setArmPower(0); //Whoa
+        }
+    }
+
+    /**
+     * Set up telemetry to output this:
+     *    <targetCaption> : <targetValue>
+     *    <currentCaption> : <currentValue>
+     * The Telemetry.Item for the currentValue is returned so the caller can keep updating it
+     * using setValue().
+     *
+     * @param targetCaption
+     * @param targetValue
+     * @param currentCaption
+     * @param currentValue
+     * @return currentItem
+     */
+    private Telemetry.Item setupArmPositionTelemetry(String targetCaption, double targetValue, String currentCaption, double currentValue) {
+        Telemetry telemetry = myOpMode.telemetry;
+        telemetry.addData(targetCaption, targetValue);
+        Telemetry.Item currentItem = telemetry.addData(currentCaption, currentValue);
+        telemetry.update(); //Allow driver station to be cleared before display.
+        telemetry.setAutoClear(false); //Henceforth updates should not clear display.
+
+        return currentItem;
     }
 }

@@ -45,7 +45,7 @@ public class CenterstageSensorAutonomous extends LinearOpMode {
      */
     private void driveToSpike(SpikeColor color) {
         double approachSpeed = .25;
-        int colorThreshold = 500;
+        int colorThreshold = 500; //Tune for expected color (blue or red).
         RGBAcolors colors;
 
         robot.setPowerAllWheels(approachSpeed);
