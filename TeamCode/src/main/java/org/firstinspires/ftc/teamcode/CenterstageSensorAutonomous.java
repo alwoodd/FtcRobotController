@@ -28,7 +28,7 @@ public class CenterstageSensorAutonomous extends LinearOpMode {
 
         // Strictly-speaking, checking opModeIsActive() is not really needed here.
         if (opModeIsActive()) {
-            driveToSpike(Color.RED);
+            driveToSpike(SpikeColor.RED);
             positionNumber = getObjectPosition();
             //Turning robot to spike position also moves pixel onto correct spike.
             turnToSpike(positionNumber);
@@ -43,7 +43,7 @@ public class CenterstageSensorAutonomous extends LinearOpMode {
      * Drive robot until the passed color is detected.
      * @param color
      */
-    private void driveToSpike(Color color) {
+    private void driveToSpike(SpikeColor color) {
         double approachSpeed = .25;
         int colorThreshold = 500;
         RGBAcolors colors;
@@ -52,7 +52,7 @@ public class CenterstageSensorAutonomous extends LinearOpMode {
 
         while (opModeIsActive()) {
             colors = robot.getSensorColors();
-            if (color == Color.RED && colors.getRed() > colorThreshold) {
+            if (color == SpikeColor.RED && colors.getRed() > colorThreshold) {
                 break;
             }
             else if (colors.getBlue() > colorThreshold) {
