@@ -28,15 +28,40 @@ public class CenterstageSensorAutonomous extends LinearOpMode {
 
         // Strictly-speaking, checking opModeIsActive() is not really needed here.
         if (opModeIsActive()) {
+            driveToSpike(Color.RED);
             positionNumber = getObjectPosition();
-            driveToSpike(positionNumber);
-            dropPixelOnSpike();     //Potentially refactor to separate class
+            //Turning robot to spike position also moves pixel onto correct spike.
+            turnToSpike(positionNumber);
             driveToBackdrop(positionNumber);
             placePixelOnBackdrop(); //Potentially refactor to separate class
         }
 
         robot.shutDown();
     }   // end runOpMode()
+
+    /**
+     * Drive robot until the passed color is detected.
+     * @param color
+     */
+    private void driveToSpike(Color color) {
+        double approachSpeed = .25;
+        int colorThreshold = 500;
+        RGBAcolors colors;
+
+        robot.setPowerAllWheels(approachSpeed);
+
+        while (opModeIsActive()) {
+            colors = robot.getSensorColors();
+            if (color == Color.RED && colors.getRed() > colorThreshold) {
+                break;
+            }
+            else if (colors.getBlue() > colorThreshold) {
+                break;
+            }
+        }
+
+        robot.setPowerAllWheels(0);
+    }
 
     /**
      * Determine which position (1, 2, or 3) the sensor detects an object (such as a cube) in.
@@ -51,19 +76,17 @@ public class CenterstageSensorAutonomous extends LinearOpMode {
 
         if (centerSensorDistance == distanceOutOfRange && sideSensorDistance == distanceOutOfRange) {
             telemetry.addData("NOT DETECTED", "Object not detected by any sensor!");
-            telemetry.update();
             positionNumber = 3;
         }
         else if (centerSensorDistance != distanceOutOfRange) {
             telemetry.addData("DETECTED SIDE", "Object distance is %.0f CM", sideSensorDistance);
-            telemetry.update();
             positionNumber = 1;
         }
         else {
             telemetry.addData("DETECTED CENTER", "Object distance is %.0f CM", centerSensorDistance);
-            telemetry.update();
             positionNumber = 2;
         }
+        telemetry.update();
 
         return positionNumber;
     }
@@ -72,15 +95,15 @@ public class CenterstageSensorAutonomous extends LinearOpMode {
      * Move robot to spike mark corresponding to passed positionNumber.
      * @param positionNumber
      */
-    private void driveToSpike(int positionNumber) {
+    private void turnToSpike(int positionNumber) {
         int driveLeftInches = 0;
         int driveRightInches = 0;
 
         /**
          * If object position is:
-         *   1: Move robot to to left spike
-         *   2: Move robot to middle spike
-         *   3: Move robot to right spike
+         *   1: Turn robot to to left spike
+         *   2: Do NOT turn robot. Is is already facing middle spike.
+         *   3: Turn robot to right spike
          */
         switch (positionNumber) {
             case 1:
@@ -88,8 +111,8 @@ public class CenterstageSensorAutonomous extends LinearOpMode {
                 driveRightInches = -22;
                 break;
             case 2:
-                driveLeftInches = -23;
-                driveRightInches = -23;
+                driveLeftInches = 0;
+                driveRightInches = 0;
                 break;
             case 3:
                 driveLeftInches = -24;
@@ -98,13 +121,6 @@ public class CenterstageSensorAutonomous extends LinearOpMode {
         }
 
         robot.autoDriveRobot(driveLeftInches, driveRightInches);
-    }
-
-    /**
-     * Drop pixel onto spike mark corresponding to passed positionNumber.
-     * It is assumed the robot is already correctly positioned.
-     */
-    private void dropPixelOnSpike() {
     }
 
     /**
