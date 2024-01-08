@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
@@ -23,8 +24,7 @@ public class RobotHardwareTeleop {
     private DcMotor rightFrontWheel;
     private DcMotor leftRearWheel;
     private DcMotor rightRearWheel;
-    private DcMotor leftArm;
-    private DcMotor rightArm;
+    private Servo drone;
 
     // Hardware device constants.  Make them public so they can be used by the calling OpMode, if needed.
     static final double COUNTS_PER_MOTOR_REV = 560;
@@ -33,6 +33,8 @@ public class RobotHardwareTeleop {
     static final double WHEEL_COUNTS_PER_INCH = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
             (WHEEL_DIAMETER_INCHES * 3.1415);
     public static final double DEFAULT_WHEEL_MOTOR_SPEED = .4;
+    public static final double LAUNCH_SERVO_POSITION = .3; //Servo position that releases drone.
+    public static final double READY_LAUNCH_POSITIION = 0; //Servo position before releasing drone.
 
     /**
      * The one and only constructor requires a reference to an OpMode.
@@ -47,6 +49,7 @@ public class RobotHardwareTeleop {
      */
     public void init() {
         initWheelMotors();
+        initServos();
 
         myOpMode.telemetry.addData(">", "Hardware Initialized");
         myOpMode.telemetry.update();
@@ -79,61 +82,9 @@ public class RobotHardwareTeleop {
         rightRearWheel.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
     }
 
-    /**
-     * Drive robot to the targeted position designated by the passed leftInches and
-     * rightInches, at the power specified by speed.
-     * @param leftInches
-     * @param rightInches
-     * @param speed
-     */
-    public void autoDriveRobot(int leftInches, int rightInches, double speed) {
-        int leftInchesToCPI = (int) (leftInches * WHEEL_COUNTS_PER_INCH);
-        int rightInchesToCPI = (int) (rightInches * WHEEL_COUNTS_PER_INCH);
-
-        int leftFrontTarget = leftFrontWheel.getCurrentPosition() + leftInchesToCPI;
-        int leftRearTarget = leftRearWheel.getCurrentPosition() + leftInchesToCPI;
-        int rightFrontTarget = rightFrontWheel.getCurrentPosition() + rightInchesToCPI;
-        int rightRearTarget = rightRearWheel.getCurrentPosition() + rightInchesToCPI;
-
-        leftFrontWheel.setTargetPosition(leftFrontTarget);
-        leftRearWheel.setTargetPosition(leftRearTarget);
-        rightFrontWheel.setTargetPosition(rightFrontTarget);
-        rightRearWheel.setTargetPosition(rightRearTarget);
-
-        setRunModeForAllWheels(DcMotor.RunMode.RUN_TO_POSITION);
-
-        //Set up telemetry
-        myOpMode.telemetry.setAutoClear(false);
-        myOpMode.telemetry.addData("Heading", "Current Wheel Positions");
-        Telemetry.Item leftFrontWheelItem = myOpMode.telemetry.addData("LF Wheel", leftFrontWheel.getCurrentPosition());
-        Telemetry.Item leftRearWheelItem = myOpMode.telemetry.addData("LR Wheel", leftRearWheel.getCurrentPosition());
-        Telemetry.Item rightFrontWheelItem = myOpMode.telemetry.addData("RF Wheel", rightFrontWheel.getCurrentPosition());
-        Telemetry.Item rightRearWheelItem = myOpMode.telemetry.addData("RR Wheel", rightRearWheel.getCurrentPosition());
-        myOpMode.telemetry.update();
-
-        setPowerAllWheels(speed);
-
-        // Update telemetry for as long as the wheel motors isBusy().
-        while (leftFrontWheel.isBusy() && leftRearWheel.isBusy() && rightFrontWheel.isBusy() && rightRearWheel.isBusy()) {
-            leftFrontWheelItem.setValue(leftFrontWheel.getCurrentPosition());
-            leftRearWheelItem.setValue(leftRearWheel.getCurrentPosition());
-            rightFrontWheelItem.setValue(rightFrontWheel.getCurrentPosition());
-            rightRearWheelItem.setValue(rightRearWheel.getCurrentPosition());
-            myOpMode.telemetry.update();
-        }
-
-        //Robot has RUN_TO_POSITION.
-        setPowerAllWheels(0); //Whoa.
-        myOpMode.telemetry.setAutoClear(true);
-    }
-
-    /**
-     * autoDriveRobot using DEFAULT_WHEEL_MOTOR_SPEED.
-     * @param leftInches
-     * @param rightInches
-     */
-    public void autoDriveRobot(int leftInches, int rightInches) {
-        autoDriveRobot(leftInches, rightInches, DEFAULT_WHEEL_MOTOR_SPEED);
+    private void initServos() {
+        drone = myOpMode.hardwareMap.get(Servo.class, "drone");
+        drone.setPosition(READY_LAUNCH_POSITIION);
     }
 
     /**
@@ -145,18 +96,6 @@ public class RobotHardwareTeleop {
         leftRearWheel.setMode(runMode);
         rightFrontWheel.setMode(runMode);
         rightRearWheel.setMode(runMode);
-    }
-
-    /**
-     * Set the Power for all wheels to the passed speed.
-     * @param speed
-     */
-    public void setPowerAllWheels(double speed) {
-        double absoluteSpeed = Math.abs(speed);
-        leftFrontWheel.setPower(absoluteSpeed);
-        leftRearWheel.setPower(absoluteSpeed);
-        rightFrontWheel.setPower(absoluteSpeed);
-        rightRearWheel.setPower(absoluteSpeed);
     }
 
     /**
@@ -190,5 +129,12 @@ public class RobotHardwareTeleop {
 
         // Use existing method to drive both wheels.
         setDrivePower(leftFrontVelocity, rightFrontVelocity, leftRearVelocity, rightRearVelocity);
+    }
+
+    /**
+     * Release drone by setting drone's servo position.
+     */
+    public void releaseDrone() {
+        drone.setPosition(LAUNCH_SERVO_POSITION);
     }
 }
