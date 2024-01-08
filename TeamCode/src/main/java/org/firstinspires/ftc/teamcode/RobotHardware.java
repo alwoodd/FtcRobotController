@@ -29,16 +29,22 @@
 
 package org.firstinspires.ftc.teamcode;
 
+import static com.qualcomm.robotcore.hardware.DistanceSensor.distanceOutOfRange;
+
+import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
+import com.qualcomm.robotcore.hardware.IMU;
+import com.qualcomm.robotcore.hardware.ImuOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.vision.VisionPortal;
@@ -75,20 +81,26 @@ public class RobotHardware {
     private DistanceSensor sideDistanceSensor;
     private ColorSensor colorSensor;
     private AnalogInput potentiometer;
+    private IMU imu;
 
-    // Define Drive constants.  Make them public so they CAN be used by the calling OpMode
+    // Hardware device constants.  Make them public so they can be used by the calling OpMode, if needed.
     static final double COUNTS_PER_MOTOR_REV = 560;
     static final double DRIVE_GEAR_REDUCTION = 1.0;     // This is < 1.0 if geared UP
     static final double WHEEL_DIAMETER_INCHES = 4.0;     // For figuring circumference
     static final double WHEEL_COUNTS_PER_INCH = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
             (WHEEL_DIAMETER_INCHES * 3.1415);
+    static final double ROBOT_TRACK_WIDTH_INCHES = 16;
     public static final double DEFAULT_WHEEL_MOTOR_SPEED = .4;
     public static final double MID_SERVO       =  0.5 ;
     public static final double HAND_SPEED      =  0.02 ;  // sets rate to move servo
     public static final double ARM_UP_POWER    =  0.45 ;
     public static final double ARM_DOWN_POWER  = -0.45 ;
-
     public static final double MAX_POTENTIOMETER_ANGLE = 270;
+    public static final double DEFAULT_APPROACH_SPEED = .4;
+
+    //Update these IMU parameters for your robot.
+    public static final RevHubOrientationOnRobot.LogoFacingDirection IMU_LOGO_DIRECTION = RevHubOrientationOnRobot.LogoFacingDirection.UP;
+    public static final RevHubOrientationOnRobot.UsbFacingDirection IMU_USB_DIRECTION = RevHubOrientationOnRobot.UsbFacingDirection.LEFT;
     /**
      * You can set the arm positions using angles and/or potentiometer voltage.
      * Tune these values for your robot's actual values.
@@ -120,6 +132,7 @@ public class RobotHardware {
         initColorSensor();
         initAnalogInputs();
         initArmMotors();
+        initIMU();
 
         myOpMode.telemetry.addData(">", "Hardware Initialized");
         myOpMode.telemetry.update();
@@ -128,10 +141,12 @@ public class RobotHardware {
     /**
      * Call shutDown() to stop and close all the robot's hardware.
      */
+/*
     public void shutDown() {
         tfod.shutdown();
         visionPortal.close();
     }
+*/
     /**
      * Initialize all the wheel motors.
      * This method must be called ONCE when the OpMode is initialized.
@@ -151,11 +166,6 @@ public class RobotHardware {
         leftRearWheel.setDirection(DcMotor.Direction.FORWARD);
         rightFrontWheel.setDirection(DcMotor.Direction.REVERSE);
         rightRearWheel.setDirection(DcMotor.Direction.REVERSE);
-
-        // If there are encoders connected, switch to RUN_USING_ENCODER mode for greater accuracy.
-        // Beware that autoDriveRobot() will set run mode to RUN_TO_POSITION). However,
-        // usages of autoDriveRobot() s/b mutually-exclusive with usages of manuallyDriveRobot().
-        setRunModeForAllWheels(DcMotor.RunMode.RUN_USING_ENCODER);
 
         // Set wheel motors to not resist turning when motor is stopped.
         leftFrontWheel.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
@@ -259,6 +269,12 @@ public class RobotHardware {
         rightArm = myOpMode.hardwareMap.get(DcMotor.class, "rightArm");
     }
 
+    private void initIMU() {
+        imu = myOpMode.hardwareMap.get(IMU.class, "imu");
+
+        ImuOrientationOnRobot imuOrientation = new RevHubOrientationOnRobot(IMU_LOGO_DIRECTION, IMU_USB_DIRECTION);
+    }
+
     /**
      * Drive robot to the targeted position designated by the passed leftInches and
      * rightInches, at the power specified by speed.
@@ -271,9 +287,9 @@ public class RobotHardware {
         int rightInchesToCPI = (int) (rightInches * WHEEL_COUNTS_PER_INCH);
 
         int leftFrontTarget = leftFrontWheel.getCurrentPosition() + leftInchesToCPI;
-        int leftRearTarget = leftFrontWheel.getCurrentPosition() + leftInchesToCPI;
-        int rightFrontTarget = leftFrontWheel.getCurrentPosition() + rightInchesToCPI;
-        int rightRearTarget = leftFrontWheel.getCurrentPosition() + rightInchesToCPI;
+        int leftRearTarget = leftRearWheel.getCurrentPosition() + leftInchesToCPI;
+        int rightFrontTarget = rightFrontWheel.getCurrentPosition() + rightInchesToCPI;
+        int rightRearTarget = rightRearWheel.getCurrentPosition() + rightInchesToCPI;
 
         leftFrontWheel.setTargetPosition(leftFrontTarget);
         leftRearWheel.setTargetPosition(leftRearTarget);
@@ -291,7 +307,7 @@ public class RobotHardware {
         Telemetry.Item rightRearWheelItem = myOpMode.telemetry.addData("RR Wheel", rightRearWheel.getCurrentPosition());
         myOpMode.telemetry.update();
 
-        setPowerAllWheels(speed);
+        setPowerAllWheels(Math.abs(speed));
 
         // Update telemetry for as long as the wheel motors isBusy().
         while (leftFrontWheel.isBusy() && leftRearWheel.isBusy() && rightFrontWheel.isBusy() && rightRearWheel.isBusy()) {
@@ -332,11 +348,10 @@ public class RobotHardware {
      * @param speed
      */
     public void setPowerAllWheels(double speed) {
-        double absoluteSpeed = Math.abs(speed);
-        leftFrontWheel.setPower(absoluteSpeed);
-        leftRearWheel.setPower(absoluteSpeed);
-        rightFrontWheel.setPower(absoluteSpeed);
-        rightRearWheel.setPower(absoluteSpeed);
+        leftFrontWheel.setPower(speed);
+        leftRearWheel.setPower(speed);
+        rightFrontWheel.setPower(speed);
+        rightRearWheel.setPower(speed);
     }
 
     /**
@@ -353,6 +368,10 @@ public class RobotHardware {
         double leftFrontVelocity = vectorLength * Math.sin(robotAngle) - rightXscale;
         double rightRearVelocity = vectorLength * Math.sin(robotAngle) + rightXscale;
         final double leftRearVelocity = vectorLength * Math.cos(robotAngle) - rightXscale;
+
+        // If there are encoders connected, switch to RUN_USING_ENCODER mode for greater accuracy.
+        setRunModeForAllWheels(DcMotor.RunMode.RUN_USING_ENCODER);
+
         // Use existing method to drive both wheels.
         setDrivePower(leftFrontVelocity, rightFrontVelocity, leftRearVelocity, rightRearVelocity);
     }
@@ -367,6 +386,116 @@ public class RobotHardware {
         leftRearWheel.setPower(leftRearPower);
         rightRearWheel.setPower(rightRearPower);
     }
+
+    /**
+     * Return robot's current heading (yaw) in degrees.
+     * @return
+     */
+    public double getHeadingDegrees() {
+        return imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
+    }
+
+    /**
+     * Calculate the delta between expectedHeading and actualHeading.
+     * @param expectedHeading
+     * @param actualHeading
+     * @return headingDelta
+     */
+/*
+    public double headingDeltaDegrees(double expectedHeading, double actualHeading) {
+        // Ensure both angles are in the range [0, 360]
+        expectedHeading = normalizeAngle(expectedHeading);
+        actualHeading = normalizeAngle(actualHeading);
+
+        // Calculate the heading error considering wrap-around
+        double headingDelta = expectedHeading - actualHeading;
+
+        // Adjust for wrap-around (ensure the error is in the range [-180, 180))
+        if (headingDelta > 180.0) {
+            headingDelta -= 360.0;
+        } else if (headingDelta <= -180.0) {
+            headingDelta += 360.0;
+        }
+
+        return headingDelta;
+    }
+*/
+
+    /**
+     * Calculate the delta between the expectedHeading and that returned by getHeadingDegrees().
+     * @param expectedHeading
+     * @return headingDelta
+     */
+/*
+    public double headDeltaDegrees(double expectedHeading) {
+        return headingDeltaDegrees(expectedHeading, getHeadingDegrees());
+    }
+*/
+
+    /**
+     * Turn robot by the passed angle.
+     * @param angle
+     */
+    public void adjustHeadingBy(double angle) {
+        int leftFrontWheelPosition = leftFrontWheel.getCurrentPosition();
+        int leftRearWheelPosition = leftRearWheel.getCurrentPosition();
+        int rightFrontWheelPosition = rightFrontWheel.getCurrentPosition();
+        int rightRearWheelPosition = rightRearWheel.getCurrentPosition();
+
+        /**
+         * wheelRotationDegrees is derived from the arc length formula in geometry,
+         * where the arc length is given by the angle subtended by the arc,
+         * multiplied by the radius. In this case, the radius is half of the track width.
+         * Thanks ChatGPT.
+         */
+        double wheelRotationDegrees = (angle * ROBOT_TRACK_WIDTH_INCHES) / WHEEL_DIAMETER_INCHES;
+        double countsPerDegree = COUNTS_PER_MOTOR_REV / 360;
+        int wheelRotationCount = (int) (wheelRotationDegrees / countsPerDegree);
+
+        //Increment wheel positions by wheelRotationCount.
+        leftFrontWheelPosition += wheelRotationCount;
+        leftRearWheelPosition += wheelRotationCount;
+        rightFrontWheelPosition += wheelRotationCount;
+        rightRearWheelPosition += wheelRotationCount;
+
+        //Make right wheels go opposite the sign of the angle.
+        rightFrontWheelPosition *= -1;
+        rightRearWheelPosition *= -1;
+
+        setRunModeForAllWheels(DcMotor.RunMode.RUN_TO_POSITION);
+        leftFrontWheel.setTargetPosition(leftFrontWheelPosition);
+        leftRearWheel.setTargetPosition(leftRearWheelPosition);
+        rightFrontWheel.setTargetPosition(rightFrontWheelPosition);
+        rightRearWheel.setTargetPosition(rightRearWheelPosition);
+    }
+
+    /**
+     * Returns true if the passed expectedValue is within tolerance of the
+     * passed actualValue. Otherwise it returns false.
+     * For example, if the expectedValue is 10, the actualValue is 11, and
+     * tolerance is 2, then true will be returned.
+     * @param expectedValue
+     * @param actualValue
+     * @param tolerance
+     * @return
+     */
+    public boolean isWithinTolerance(double expectedValue, double actualValue, double tolerance) {
+        double delta = Math.abs(expectedValue - actualValue);
+        return (delta <= tolerance);
+    }
+
+    /**
+     * Given any angle, returns value that will be 0 - 360.
+     * For example, -400 is normalized to 320.
+     * @param angle
+     * @return normalized angle
+     */
+/*
+    private double normalizeAngle(double angle) {
+        // Normalize the angle to be in the range [0, 360]
+        return (angle % 360.0 + 360.0) % 360.0;
+    }
+*/
 
     /**
      * Pass the requested arm power to the appropriate hardware drive motor
@@ -466,6 +595,70 @@ public class RobotHardware {
         int alpha = colorSensor.alpha();
 
         return new RGBAcolors(red, green, blue, alpha);
+    }
+
+    /**
+     * Drive robot until the passed color is detected.
+     * @param color
+     * @param colorThreshold
+     */
+    public void driveToSpike(SpikeColor color, int colorThreshold, double approachSpeed) {
+        RGBAcolors colors;
+
+        setRunModeForAllWheels(DcMotor.RunMode.RUN_USING_ENCODER);
+        setPowerAllWheels(approachSpeed);
+
+        while (myOpMode.opModeIsActive()) {
+            colors = getSensorColors();
+            if (color == SpikeColor.RED && colors.getRed() > colorThreshold) {
+                break;
+            }
+            else if (colors.getBlue() > colorThreshold) {
+                break;
+            }
+        }
+
+        setPowerAllWheels(0);
+    }
+
+    /**
+     * Drive robot until the passed color is detected,
+     * using DEFAULT_APPROACH_SPEED.
+     * @param color
+     * @param colorThreshold
+     */
+    public void driveToSpike(SpikeColor color, int colorThreshold) {
+        driveToSpike(color, colorThreshold, DEFAULT_APPROACH_SPEED);
+    }
+
+    /**
+     * Determine which position (1, 2, or 3) the sensor detects an object (such as a cube) is in.
+     * In this example, if neither the center or side sensors detect an object,
+     * the position is 3. If the center sensor detects an object, the position is 1. Lastly,
+     * if the side sensor detects an object, the position is 2.
+     *
+     * @return int positionNumber
+     */
+    public int getSpikeObjectPosition() {
+        double centerSensorDistance = getCenterSensorDistanceInCM();
+        double sideSensorDistance = getSideSensorDistanceInCM();
+        int positionNumber = 0;
+
+        if (centerSensorDistance == distanceOutOfRange && sideSensorDistance == distanceOutOfRange) {
+            myOpMode.telemetry.addData("NOT DETECTED", "Object not detected by any sensor!");
+            positionNumber = 3;
+        }
+        else if (centerSensorDistance != distanceOutOfRange) {
+            myOpMode.telemetry.addData("DETECTED SIDE", "Object distance is %.0f CM", sideSensorDistance);
+            positionNumber = 1;
+        }
+        else {
+            myOpMode.telemetry.addData("DETECTED CENTER", "Object distance is %.0f CM", centerSensorDistance);
+            positionNumber = 2;
+        }
+        myOpMode.telemetry.update();
+
+        return positionNumber;
     }
 
     /**

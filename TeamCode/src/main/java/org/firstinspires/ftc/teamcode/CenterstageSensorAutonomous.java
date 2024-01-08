@@ -13,83 +13,29 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
  *  -Driving to the backdrop in front of the left, middle, or right side.
  *  -Placing the pixel onto the backdrop.
  */
-@Autonomous(name = "Detect image and move robot to it")
+@Autonomous(name = "Detect object and move robot to it")
 public class CenterstageSensorAutonomous extends LinearOpMode {
-    private RobotHardware robot;
-
+    private  RobotHardware robot;
     @Override
     public void runOpMode() {
         robot = new RobotHardware(this);
         robot.init();
 
-        int positionNumber;
+        int colorThreshold = 500; //Tune for expected color (blue or red).
 
         waitForStart();
 
         // Strictly-speaking, checking opModeIsActive() is not really needed here.
         if (opModeIsActive()) {
-            driveToSpike(SpikeColor.RED);
-            positionNumber = getObjectPosition();
+            robot.driveToSpike(SpikeColor.RED, colorThreshold);
+            int positionNumber = robot.getSpikeObjectPosition();
             //Turning robot to spike position also moves pixel onto correct spike.
             turnToSpike(positionNumber);
             driveToBackdrop(positionNumber);
             placePixelOnBackdrop(); //Potentially refactor to separate class
         }
 
-        robot.shutDown();
     }   // end runOpMode()
-
-    /**
-     * Drive robot until the passed color is detected.
-     * @param color
-     */
-    private void driveToSpike(SpikeColor color) {
-        double approachSpeed = .25;
-        int colorThreshold = 500; //Tune for expected color (blue or red).
-        RGBAcolors colors;
-
-        robot.setPowerAllWheels(approachSpeed);
-
-        while (opModeIsActive()) {
-            colors = robot.getSensorColors();
-            if (color == SpikeColor.RED && colors.getRed() > colorThreshold) {
-                break;
-            }
-            else if (colors.getBlue() > colorThreshold) {
-                break;
-            }
-        }
-
-        robot.setPowerAllWheels(0);
-    }
-
-    /**
-     * Determine which position (1, 2, or 3) the sensor detects an object (such as a cube) in.
-     * If the sensors do not detect an object using either the front or side sensors,
-     * it is assumed the object is in the 3rd position.
-     * @return int positionNumber
-     */
-    private int getObjectPosition() {
-        double centerSensorDistance = robot.getCenterSensorDistanceInCM();
-        double sideSensorDistance = robot.getSideSensorDistanceInCM();
-        int positionNumber = 0;
-
-        if (centerSensorDistance == distanceOutOfRange && sideSensorDistance == distanceOutOfRange) {
-            telemetry.addData("NOT DETECTED", "Object not detected by any sensor!");
-            positionNumber = 3;
-        }
-        else if (centerSensorDistance != distanceOutOfRange) {
-            telemetry.addData("DETECTED SIDE", "Object distance is %.0f CM", sideSensorDistance);
-            positionNumber = 1;
-        }
-        else {
-            telemetry.addData("DETECTED CENTER", "Object distance is %.0f CM", centerSensorDistance);
-            positionNumber = 2;
-        }
-        telemetry.update();
-
-        return positionNumber;
-    }
 
     /**
      * Move robot to spike mark corresponding to passed positionNumber.
