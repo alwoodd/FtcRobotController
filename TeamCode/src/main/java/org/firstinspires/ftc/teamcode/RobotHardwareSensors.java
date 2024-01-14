@@ -10,10 +10,10 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 public class RobotHardwareSensors {
     public static final double DEFAULT_APPROACH_SPEED = .4;
     private LinearOpMode myOpMode = null;   // gain access to methods in the calling OpMode.
-    private DistanceSensor centerDistanceSensor;
-    private DistanceSensor sideDistanceSensor;
+    private DistanceSensor leftDistanceSensor;
+    private DistanceSensor rightDistanceSensor;
     private ColorSensor colorSensor;
-
+    static final double SENSOR_DISTANCE_OUT_OF_RANGE = 20;
     /**
      * The one and only constructor requires a reference to an OpMode.
      * @param opmode
@@ -36,8 +36,8 @@ public class RobotHardwareSensors {
      * Initialize distance sensor(s).
      */
     private void initDistanceSensors() {
-        centerDistanceSensor = myOpMode.hardwareMap.get(DistanceSensor.class, "centerDistanceSensor");
-        sideDistanceSensor = myOpMode.hardwareMap.get(DistanceSensor.class, "sideDistanceSensor");
+        leftDistanceSensor = myOpMode.hardwareMap.get(DistanceSensor.class, "leftDistanceSensor");
+        rightDistanceSensor = myOpMode.hardwareMap.get(DistanceSensor.class, "rightDistanceSensor");
     }
 
     private void initColorSensor() {
@@ -61,15 +61,15 @@ public class RobotHardwareSensors {
     }
 
     /**
-     * Return distance detected by Center Sensor in CM.
+     * Return distance detected by Left Sensor in CM.
      * @return distance in CM
      */
-    public double getCenterSensorDistanceInCM() {
-        return centerDistanceSensor.getDistance(DistanceUnit.CM);
+    public double getLeftSensorDistanceInCM() {
+        return leftDistanceSensor.getDistance(DistanceUnit.CM);
     }
 
     /**
-     * Return distance detected by Center Sensor,
+     * Return distance detected by Left Sensor,
      * using whatever DistanceUnit is passed in.
      * Available units:
      *    DistanceUnit.MM
@@ -79,20 +79,20 @@ public class RobotHardwareSensors {
      * @param distanceUnit
      * @return
      */
-    public double getCenterSensorDistance(DistanceUnit distanceUnit) {
-        return centerDistanceSensor.getDistance(distanceUnit);
+    public double getLeftSensorDistance(DistanceUnit distanceUnit) {
+        return leftDistanceSensor.getDistance(distanceUnit);
     }
 
     /**
-     * Return distance detected by Side Sensor in CM.
+     * Return distance detected by Right Sensor in CM.
      * @return distance in CM
      */
-    public double getSideSensorDistanceInCM() {
-        return sideDistanceSensor.getDistance(DistanceUnit.CM);
+    public double getRightSensorDistanceInCM() {
+        return rightDistanceSensor.getDistance(DistanceUnit.CM);
     }
 
     /**
-     * Return distance detected by Side Sensor,
+     * Return distance detected by Right Sensor,
      * using whatever DistanceUnit is passed in.
      * Available units:
      *    DistanceUnit.MM
@@ -102,8 +102,8 @@ public class RobotHardwareSensors {
      * @param distanceUnit
      * @return
      */
-    public double getSideSensorDistance(DistanceUnit distanceUnit) {
-        return sideDistanceSensor.getDistance(distanceUnit);
+    public double getRightSensorDistance(DistanceUnit distanceUnit) {
+        return rightDistanceSensor.getDistance(distanceUnit);
     }
 
     /**
@@ -162,20 +162,20 @@ public class RobotHardwareSensors {
      * @return int positionNumber
      */
     public int getSpikeObjectPosition() {
-        double centerSensorDistance = getCenterSensorDistanceInCM();
-        double sideSensorDistance = getSideSensorDistanceInCM();
+        double leftSensorDistance = getLeftSensorDistanceInCM();
+        double rightSensorDistance = getRightSensorDistanceInCM();
         int positionNumber = 0;
 
-        if (centerSensorDistance == distanceOutOfRange && sideSensorDistance == distanceOutOfRange) {
+        if (leftSensorDistance >= SENSOR_DISTANCE_OUT_OF_RANGE && rightSensorDistance >= SENSOR_DISTANCE_OUT_OF_RANGE) {
             myOpMode.telemetry.addData("NOT DETECTED", "Object not detected by any sensor!");
-            positionNumber = 3;
+            positionNumber = 2;
         }
-        else if (centerSensorDistance != distanceOutOfRange) {
-            myOpMode.telemetry.addData("DETECTED SIDE", "Object distance is %.0f CM", sideSensorDistance);
+        else if (leftSensorDistance <= SENSOR_DISTANCE_OUT_OF_RANGE) {
+            myOpMode.telemetry.addData("DETECTED LEFT", "Object distance is %.0f CM", leftSensorDistance);
             positionNumber = 1;
         }
         else {
-            myOpMode.telemetry.addData("DETECTED CENTER", "Object distance is %.0f CM", centerSensorDistance);
+            myOpMode.telemetry.addData("DETECTED RIGHT", "Object distance is %.0f CM", rightSensorDistance);
             positionNumber = 2;
         }
         myOpMode.telemetry.update();

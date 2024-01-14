@@ -29,8 +29,6 @@
 
 package org.firstinspires.ftc.teamcode;
 
-import static com.qualcomm.robotcore.hardware.DistanceSensor.distanceOutOfRange;
-
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.AnalogInput;
@@ -63,7 +61,7 @@ import java.util.List;
 public class RobotHardware {
 
     /* Declare OpMode members. */
-    private LinearOpMode myOpMode = null;   // gain access to methods in the calling OpMode.
+    private LinearOpMode myOpMode;   // gain access to methods in the calling OpMode.
 
     // Define all the HardwareDevices (Motors, Servos, etc.). Make them private so they can't be accessed externally.
     private DcMotor leftFrontWheel;
@@ -77,8 +75,8 @@ public class RobotHardware {
     private Servo   rightHand;
     private TfodProcessor tfod;
     private VisionPortal visionPortal;
-    private DistanceSensor centerDistanceSensor;
-    private DistanceSensor sideDistanceSensor;
+    private DistanceSensor leftDistanceSensor;
+    private DistanceSensor rightDistanceSensor;
     private ColorSensor colorSensor;
     private AnalogInput potentiometer;
     private IMU imu;
@@ -97,6 +95,8 @@ public class RobotHardware {
     public static final double ARM_DOWN_POWER  = -0.45 ;
     public static final double MAX_POTENTIOMETER_ANGLE = 270;
     public static final double DEFAULT_APPROACH_SPEED = .4;
+
+    static final double SENSOR_DISTANCE_OUT_OF_RANGE = 20;
 
     //Update these IMU parameters for your robot.
     public static final RevHubOrientationOnRobot.LogoFacingDirection IMU_LOGO_DIRECTION = RevHubOrientationOnRobot.LogoFacingDirection.UP;
@@ -172,6 +172,10 @@ public class RobotHardware {
         rightFrontWheel.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         leftRearWheel.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         rightRearWheel.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+
+        // Use STOP_AND_RESET_ENCODER to keep wheels from moving in unexpected ways
+        // during subsequent runs of an OpMode.
+        setRunModeForAllWheels(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
     }
 
     /**
@@ -252,8 +256,8 @@ public class RobotHardware {
      * Initialize distance sensor(s).
      */
     private void initDistanceSensors() {
-        centerDistanceSensor = myOpMode.hardwareMap.get(DistanceSensor.class, "centerDistanceSensor");
-        sideDistanceSensor = myOpMode.hardwareMap.get(DistanceSensor.class, "sideDistanceSensor");
+        leftDistanceSensor = myOpMode.hardwareMap.get(DistanceSensor.class, "centerDistanceSensor");
+        rightDistanceSensor = myOpMode.hardwareMap.get(DistanceSensor.class, "sideDistanceSensor");
     }
 
     private void initColorSensor() {
@@ -539,15 +543,15 @@ public class RobotHardware {
     }
 
     /**
-     * Return distance detected by Center Sensor in CM.
+     * Return distance detected by Left Sensor in CM.
      * @return distance in CM
      */
-    public double getCenterSensorDistanceInCM() {
-        return centerDistanceSensor.getDistance(DistanceUnit.CM);
+    public double getLeftSensorDistanceInCM() {
+        return leftDistanceSensor.getDistance(DistanceUnit.CM);
     }
 
     /**
-     * Return distance detected by Center Sensor,
+     * Return distance detected by Left Sensor,
      * using whatever DistanceUnit is passed in.
      * Available units:
      *    DistanceUnit.MM
@@ -557,20 +561,20 @@ public class RobotHardware {
      * @param distanceUnit
      * @return
      */
-    public double getCenterSensorDistance(DistanceUnit distanceUnit) {
-        return centerDistanceSensor.getDistance(distanceUnit);
+    public double LeftSensorDistance(DistanceUnit distanceUnit) {
+        return leftDistanceSensor.getDistance(distanceUnit);
     }
 
     /**
-     * Return distance detected by Side Sensor in CM.
+     * Return distance detected by Right Sensor in CM.
      * @return distance in CM
      */
-    public double getSideSensorDistanceInCM() {
-        return sideDistanceSensor.getDistance(DistanceUnit.CM);
+    public double getRightSensorDistanceInCM() {
+        return rightDistanceSensor.getDistance(DistanceUnit.CM);
     }
 
     /**
-     * Return distance detected by Side Sensor,
+     * Return distance detected by Right Sensor,
      * using whatever DistanceUnit is passed in.
      * Available units:
      *    DistanceUnit.MM
@@ -580,8 +584,8 @@ public class RobotHardware {
      * @param distanceUnit
      * @return
      */
-    public double getSideSensorDistance(DistanceUnit distanceUnit) {
-        return sideDistanceSensor.getDistance(distanceUnit);
+    public double getRightSensorDistance(DistanceUnit distanceUnit) {
+        return rightDistanceSensor.getDistance(distanceUnit);
     }
 
     /**
@@ -633,28 +637,28 @@ public class RobotHardware {
 
     /**
      * Determine which position (1, 2, or 3) the sensor detects an object (such as a cube) is in.
-     * In this example, if neither the center or side sensors detect an object,
-     * the position is 3. If the center sensor detects an object, the position is 1. Lastly,
-     * if the side sensor detects an object, the position is 2.
+     * In this example, if neither the left or right sensors detect an object,
+     * the position is 2. If the left sensor detects an object, the position is 1. Lastly,
+     * if the right sensor detects an object, the position is 3.
      *
      * @return int positionNumber
      */
     public int getSpikeObjectPosition() {
-        double centerSensorDistance = getCenterSensorDistanceInCM();
-        double sideSensorDistance = getSideSensorDistanceInCM();
+        double leftSensorDistance = getLeftSensorDistanceInCM();
+        double rightSensorDistance = getRightSensorDistanceInCM();
         int positionNumber = 0;
 
-        if (centerSensorDistance == distanceOutOfRange && sideSensorDistance == distanceOutOfRange) {
+        if (leftSensorDistance >= SENSOR_DISTANCE_OUT_OF_RANGE && rightSensorDistance >= SENSOR_DISTANCE_OUT_OF_RANGE) {
             myOpMode.telemetry.addData("NOT DETECTED", "Object not detected by any sensor!");
-            positionNumber = 3;
+            positionNumber = 2;
         }
-        else if (centerSensorDistance != distanceOutOfRange) {
-            myOpMode.telemetry.addData("DETECTED SIDE", "Object distance is %.0f CM", sideSensorDistance);
+        else if (leftSensorDistance <= SENSOR_DISTANCE_OUT_OF_RANGE) {
+            myOpMode.telemetry.addData("DETECTED LEFT", "Object distance is %.0f CM", leftSensorDistance);
             positionNumber = 1;
         }
         else {
-            myOpMode.telemetry.addData("DETECTED CENTER", "Object distance is %.0f CM", centerSensorDistance);
-            positionNumber = 2;
+            myOpMode.telemetry.addData("DETECTED RIGHT", "Object distance is %.0f CM", rightSensorDistance);
+            positionNumber = 3;
         }
         myOpMode.telemetry.update();
 
