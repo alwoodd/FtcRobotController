@@ -31,6 +31,8 @@ public class CenterstageSensorAutonomous extends LinearOpMode {
             int positionNumber = robot.getSpikeObjectPosition();
             //Turning robot to spike position also moves pixel onto correct spike.
             turnToSpike(positionNumber);
+            //If this method can be generalized enough for all corners,
+            //consider putting into RobotHardware.
             driveToBackdrop(positionNumber);
             placePixelOnBackdrop(); //Potentially refactor to separate class
         }

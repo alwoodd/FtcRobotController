@@ -287,6 +287,14 @@ public class RobotHardware {
      * @param speed
      */
     public void autoDriveRobot(int leftInches, int rightInches, double speed) {
+        /**
+         * Some robots, when running back-to-back calls to autoDriveRobot(),
+         * start driving some of their wheels in unexpected directions. Uncomment
+         * this if your robot starts acting stupid:
+         *
+         * setRunModeForAllWheels(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+         */
+
         int leftInchesToCPI = (int) (leftInches * WHEEL_COUNTS_PER_INCH);
         int rightInchesToCPI = (int) (rightInches * WHEEL_COUNTS_PER_INCH);
 
