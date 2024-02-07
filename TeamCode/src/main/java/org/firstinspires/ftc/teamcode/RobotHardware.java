@@ -83,11 +83,13 @@ public class RobotHardware {
     private IMU imu;
 
     // Hardware device constants.  Make them public so they can be used by the calling OpMode, if needed.
-    static final double COUNTS_PER_MOTOR_REV = 560;
+    static final double COUNTS_PER_MOTOR_REV = 560;     // Assumes 20:1 gear reduction
+                                                        // See https://docs.revrobotics.com/duo-control/sensors/encoders/motor-based-encoders
     static final double DRIVE_GEAR_REDUCTION = 1.0;     // This is < 1.0 if geared UP
     static final double WHEEL_DIAMETER_INCHES = 4.0;     // For figuring circumference
     static final double WHEEL_COUNTS_PER_INCH = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
             (WHEEL_DIAMETER_INCHES * 3.1415);
+    public static final double ENCODER_COUNT_PER_DEGREE = COUNTS_PER_MOTOR_REV / 360;
     static final double ROBOT_TRACK_WIDTH_INCHES = 16;
     public static final double DEFAULT_WHEEL_MOTOR_SPEED = .4;
     public static final double MID_SERVO       =  0.5 ;
@@ -757,7 +759,9 @@ public class RobotHardware {
     public void adjustArmByAngle(double angle) {
         double currentAngle = getPotentiometerAngle();
         double targetAngle = angle + currentAngle;
-        if (targetAngle > getPotentiometerAngle(getPotentiometerVoltage())) {
+        // If targetAngle > the angle using potentiometer's max voltage,
+        // set targetAngle to MAX_POTENTIOMETER_ANGLE.
+        if (targetAngle > getPotentiometerAngle(potentiometer.getMaxVoltage())) {
             targetAngle = MAX_POTENTIOMETER_ANGLE;
         }
         else if (targetAngle < 0) {
@@ -800,6 +804,39 @@ public class RobotHardware {
 
             setArmPower(0); //Whoa
         }
+    }
+
+    /**
+     * Adjust arm angles to the passed angle using encoders.
+     * @param angle
+     */
+    public void adjustArmAngleUsingEncoder(double angle) {
+        int encoderCountAdjustment = (int) (ENCODER_COUNT_PER_DEGREE * angle);
+
+        //The arms *should* be parallel, but calculate new targets for both arms anyway.
+        int leftArmTargetEncoderCount = leftArm.getCurrentPosition() + encoderCountAdjustment;
+        int rightArmTargetEncoderCount = rightArm.getCurrentPosition() + encoderCountAdjustment;
+
+        leftArm.setTargetPosition(leftArmTargetEncoderCount);
+        rightArm.setTargetPosition(rightArmTargetEncoderCount);
+        setRunModeForAllArms(DcMotor.RunMode.RUN_TO_POSITION);
+
+        //Set up telemetry
+        myOpMode.telemetry.setAutoClear(false);
+        Telemetry.Item leftArmItem = myOpMode.telemetry.addData("Left Arm", leftArm.getCurrentPosition());
+        Telemetry.Item rightArmItem = myOpMode.telemetry.addData("Right Arm", rightArm.getCurrentPosition());
+        myOpMode.telemetry.update();
+
+        setArmPower(ARM_DOWN_POWER); //Using ARM_DOWN_POWER for now.
+
+        // Update telemetry for as long as the wheel motors isBusy().
+        while (leftArm.isBusy() && rightArm.isBusy()) {
+            leftArmItem.setValue(leftArm.getCurrentPosition());
+            rightArmItem.setValue(rightArm.getCurrentPosition());
+            myOpMode.telemetry.update();
+        }
+
+        myOpMode.telemetry.setAutoClear(true);
     }
 
     /**

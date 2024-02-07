@@ -29,6 +29,10 @@ public class CenterstageUseArm extends LinearOpMode {
                 robot.setArmPositionUsingAngle(RobotHardware.ARM_BACKDROP_ANGLE);
                 //robot.setArmPositionUsingVoltage(RobotHardware.ARM_BACKDROP_VOLTAGE);
             }
+            //Here is an example of using adjustArmByAngle().
+            else if (gamepad1.left_bumper) {
+                robot.adjustArmByAngle(RobotHardware.ARM_PARKED_ANGLE);
+            }
         }
     }
 }
