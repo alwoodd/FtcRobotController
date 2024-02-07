@@ -76,6 +76,18 @@ public class RobotHardwarePotentiometer {
     }
 
     /**
+     * Return calculated angle corresponding to a passed voltage.
+     * Example: If the potentiometer's maximum voltage is 3.3,
+     *          and it's maximum angle is 270 degrees,
+     *          and the passed voltage is 1.65
+     *          then the angle is 1.65 * 270 / 3.3 = 135 degrees.
+     * @return angle
+     */
+    public double getPotentiometerAngle(double voltage ) {
+        return voltage * MAX_POTENTIOMETER_ANGLE / potentiometer.getMaxVoltage();
+    }
+
+    /**
      * Return calculated angle corresponding to potentiometer's current voltage.
      * Example: If the potentiometer's maximum voltage is 3.3,
      *          and it's maximum angle is 270 degrees,
@@ -83,8 +95,8 @@ public class RobotHardwarePotentiometer {
      *          then the current angle is 1.65 * 270 / 3.3 = 135 degrees.
      * @return angle
      */
-    public double getPotentiometerAngle(double voltage) {
-        return potentiometer.getVoltage() * MAX_POTENTIOMETER_ANGLE / potentiometer.getMaxVoltage();
+    public double getPotentiometerAngle() {
+        return getPotentiometerAngle(potentiometer.getVoltage());
     }
 
     /**
@@ -122,11 +134,37 @@ public class RobotHardwarePotentiometer {
     }
 
     /**
-     * Move arm up or down until it gets to potentiometer's targetAngle.
+     * moveArmUpOrDown() based on the passed targetAngle, and
+     * the potentiometer's current angle.
      * @param targetAngle
      */
     public void setArmPositionUsingAngle(double targetAngle) {
-        double currentAngle = getPotentiometerAngle(potentiometer.getVoltage());
+        double currentAngle = getPotentiometerAngle();
+        moveArmUpOrDown(currentAngle, targetAngle);
+    }
+
+    /**
+     * moveArmUpOrDown() by the passed angle, relative to the current angle.
+     * @param angle
+     */
+    public void adjustArmByAngle(double angle) {
+        double currentAngle = getPotentiometerAngle();
+        double targetAngle = angle + currentAngle;
+        if (targetAngle > getPotentiometerAngle(getPotentiometerVoltage())) {
+            targetAngle = MAX_POTENTIOMETER_ANGLE;
+        }
+        else if (targetAngle < 0) {
+            targetAngle = 0;
+        }
+
+        moveArmUpOrDown(currentAngle, targetAngle);
+    }
+
+    /**
+     * Move arm up or down until it gets to passed targetAngle.
+     * @param targetAngle
+     */
+    private void moveArmUpOrDown(double currentAngle, double targetAngle) {
         setRunModeForAllArms(DcMotor.RunMode.RUN_USING_ENCODER);
 
         //Ex. If currentAngle is 100 degrees, and targetAngle is 200 degrees,
@@ -137,8 +175,8 @@ public class RobotHardwarePotentiometer {
             Telemetry.Item currentTelemetryItem = setupArmPositionTelemetry("Target Angle", targetAngle, "Current Angle", currentAngle);
             setArmPower(ARM_UP_POWER);
 
-            while (myOpMode.opModeIsActive() && getPotentiometerAngle(potentiometer.getVoltage()) < targetAngle) {
-                currentTelemetryItem.setValue(getPotentiometerAngle(potentiometer.getVoltage()));
+            while (myOpMode.opModeIsActive() && getPotentiometerAngle() < targetAngle) {
+                currentTelemetryItem.setValue(getPotentiometerAngle());
                 myOpMode.telemetry.update();
             }
 
@@ -148,15 +186,14 @@ public class RobotHardwarePotentiometer {
             Telemetry.Item currentTelemetryItem = setupArmPositionTelemetry("Target Angle", targetAngle, "Current Angle", currentAngle);
             setArmPower(ARM_DOWN_POWER);
 
-            while (myOpMode.opModeIsActive() && getPotentiometerAngle(potentiometer.getVoltage()) > targetAngle) {
-                currentTelemetryItem.setValue(getPotentiometerAngle(potentiometer.getVoltage()));
+            while (myOpMode.opModeIsActive() && getPotentiometerAngle() > targetAngle) {
+                currentTelemetryItem.setValue(getPotentiometerAngle());
                 myOpMode.telemetry.update();
             }
 
             setArmPower(0); //Whoa
         }
     }
-
     /**
      * Set up telemetry to output this:
      *    <targetCaption> : <targetValue>
