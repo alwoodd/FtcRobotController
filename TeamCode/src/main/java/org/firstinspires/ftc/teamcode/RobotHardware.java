@@ -48,7 +48,7 @@ import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.tfod.TfodProcessor;
 
-import java.util.EnumSet;
+import java.net.InetAddress;
 import java.util.List;
 
 /**
@@ -89,31 +89,40 @@ public class RobotHardware {
     static final double WHEEL_DIAMETER_INCHES = 4.0;     // For figuring circumference
     static final double WHEEL_COUNTS_PER_INCH = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
             (WHEEL_DIAMETER_INCHES * 3.1415);
-    public static final double ENCODER_COUNT_PER_DEGREE = COUNTS_PER_MOTOR_REV / 360;
+    static final double ENCODER_COUNT_PER_DEGREE = COUNTS_PER_MOTOR_REV / 360;
+    // Define the Proportional control coefficient (or GAIN) for "heading control".
+    // We define one value when Turning (larger errors), and the other is used when Driving straight (smaller errors).
+    // Increase these numbers if the heading does not corrects strongly enough (eg: a heavy robot or using tracks)
+    // Decrease these numbers if the heading does not settle on the correct value (eg: very agile robot with omni wheels)
+    static final double WHEEL_DRIVE_GAIN_FACTOR = .03;  // Larger is more responsive, but also less stable
+    static final double WHEEL_TURN_GAIN_FACTOR  = 0.02; // Larger is more responsive, but also less stable
+
     static final double ROBOT_TRACK_WIDTH_INCHES = 16;
-    public static final double DEFAULT_WHEEL_MOTOR_SPEED = .4;
-    public static final double MID_SERVO       =  0.5 ;
-    public static final double HAND_SPEED      =  0.02 ;  // sets rate to move servo
-    public static final double ARM_UP_POWER    =  0.45 ;
-    public static final double ARM_DOWN_POWER  = -0.45 ;
-    public static final double MAX_POTENTIOMETER_ANGLE = 270;
-    public static final double DEFAULT_APPROACH_SPEED = .4;
+    static final double DEFAULT_WHEEL_MOTOR_SPEED = .4;
+    static final double  HEADING_THRESHOLD = 1.0 ; // How close must the heading get to the target before moving to next step.
+                                                   // Requiring more accuracy (a smaller number) will often make the turn take longer to get into the final position.
+    static final double MID_SERVO       =  0.5 ;
+    static final double HAND_SPEED      =  0.02 ;  // sets rate to move servo
+    static final double ARM_UP_POWER    =  0.45 ;
+    static final double ARM_DOWN_POWER  = -0.45 ;
+    static final double MAX_POTENTIOMETER_ANGLE = 270;
+    static final double DEFAULT_APPROACH_SPEED = .4;
 
     static final double SENSOR_DISTANCE_OUT_OF_RANGE = 20;
 
     //Update these IMU parameters for your robot.
-    public static final RevHubOrientationOnRobot.LogoFacingDirection IMU_LOGO_DIRECTION = RevHubOrientationOnRobot.LogoFacingDirection.UP;
-    public static final RevHubOrientationOnRobot.UsbFacingDirection IMU_USB_DIRECTION = RevHubOrientationOnRobot.UsbFacingDirection.LEFT;
+    static final RevHubOrientationOnRobot.LogoFacingDirection IMU_LOGO_DIRECTION = RevHubOrientationOnRobot.LogoFacingDirection.UP;
+    static final RevHubOrientationOnRobot.UsbFacingDirection IMU_USB_DIRECTION = RevHubOrientationOnRobot.UsbFacingDirection.LEFT;
     /**
      * You can set the arm positions using angles and/or potentiometer voltage.
      * Tune these values for your robot's actual values.
      */
-    public static final double ARM_PARKED_ANGLE = 0;
-    public static final double ARM_PIXEL_PICKUP_ANGLE = 200;
-    public static final double ARM_BACKDROP_ANGLE = 100;
-    public static final double ARM_PARKED_VOLTAGE = 0;
-    public static final double ARM_PIXEL_PICKUP_VOLTAGE = 3;
-    public static final double ARM_BACKDROP_VOLTAGE = 1.4;
+    static final double ARM_PARKED_ANGLE = 0;
+    static final double ARM_PIXEL_PICKUP_ANGLE = 200;
+    static final double ARM_BACKDROP_ANGLE = 100;
+    static final double ARM_PARKED_VOLTAGE = 0;
+    static final double ARM_PIXEL_PICKUP_VOLTAGE = 3;
+    static final double ARM_BACKDROP_VOLTAGE = 1.4;
 
     /**
      * The one and only constructor requires a reference to an OpMode.
@@ -285,9 +294,9 @@ public class RobotHardware {
     /**
      * Drive robot to the targeted position designated by the passed leftInches and
      * rightInches, at the power specified by speed.
-     * @param leftInches
-     * @param rightInches
-     * @param speed
+     * @param leftInches How far the left wheels should travel
+     * @param rightInches How far the right wheels should travel
+     * @param speed speed applied to all wheels
      */
     public void autoDriveRobot(int leftInches, int rightInches, double speed) {
         /**
@@ -322,6 +331,7 @@ public class RobotHardware {
         Telemetry.Item rightRearWheelItem = myOpMode.telemetry.addData("RR Wheel", rightRearWheel.getCurrentPosition());
         myOpMode.telemetry.update();
 
+        //It is best for power to be positive for RUN_TO_POSITION.
         setPowerAllWheels(Math.abs(speed));
 
         // Update telemetry for as long as the wheel motors isBusy().
@@ -340,16 +350,121 @@ public class RobotHardware {
 
     /**
      * autoDriveRobot using DEFAULT_WHEEL_MOTOR_SPEED.
-     * @param leftInches
-     * @param rightInches
+     * @param leftInches How far the left wheels should travel
+     * @param rightInches How far the right wheels should travel
      */
     public void autoDriveRobot(int leftInches, int rightInches) {
         autoDriveRobot(leftInches, rightInches, DEFAULT_WHEEL_MOTOR_SPEED);
     }
 
     /**
+     * Drive robot the targeted inches, at the passed heading, at the passed speed.
+     * Left and right wheel speeds are adjusted as necessary to get the robot on
+     * the passed heading.
+     * @param inches How far the robot should travel
+     * @param heading Heading in yaw degree (+/- 180)
+     * @param speed Speed to apply to all wheels
+     */
+    public void autoDriveRobotWithHeading(int inches, double heading, double speed) {
+        int inchesToCPI = (int) (inches * WHEEL_COUNTS_PER_INCH);
+
+        int leftFrontTarget = leftFrontWheel.getCurrentPosition() + inchesToCPI;
+        int leftRearTarget = leftRearWheel.getCurrentPosition() + inchesToCPI;
+        int rightFrontTarget = rightFrontWheel.getCurrentPosition() + inchesToCPI;
+        int rightRearTarget = rightRearWheel.getCurrentPosition() + inchesToCPI;
+
+        leftFrontWheel.setTargetPosition(leftFrontTarget);
+        leftRearWheel.setTargetPosition(leftRearTarget);
+        rightFrontWheel.setTargetPosition(rightFrontTarget);
+        rightRearWheel.setTargetPosition(rightRearTarget);
+
+        setRunModeForAllWheels(DcMotor.RunMode.RUN_TO_POSITION);
+
+        HeadingTelemetry headingTelemetry = new HeadingTelemetry("Drive");
+        headingTelemetry.setTargetPositions(leftFrontTarget, leftRearTarget, rightFrontTarget, rightRearTarget);
+        headingTelemetry.setTargetHeading(heading);
+
+        // Set the required driving speed. Use a positive amount here.
+        // Start driving straight, and then enter the control loop
+        setPowerAllWheels(Math.abs(speed));
+
+        while (myOpMode.opModeIsActive() && leftFrontWheel.isBusy() && leftRearWheel.isBusy() && rightFrontWheel.isBusy() && rightRearWheel.isBusy()) {
+            double headingSpeedAdjustment = getHeadingCorrection(heading, WHEEL_DRIVE_GAIN_FACTOR);
+            headingTelemetry.updateHeadingData(headingSpeedAdjustment);
+
+            // if driving in reverse, the motor correction also needs to be reversed
+            if (inches < 0)
+                headingSpeedAdjustment *= -1.0;
+
+            setPowerAllWheels(speed, headingSpeedAdjustment);
+            headingTelemetry.updateWheelData();
+        }
+
+        setPowerAllWheels(0); //Whoa
+        headingTelemetry.reset();
+    }
+
+    /**
+     *  Spin on the central axis to point in a new direction.
+     *  Move will stop if either of these conditions occur:
+     *  1) Move gets to the heading (angle)
+     *  2) Driver stops the OpMode running.
+     * @param heading Absolute Heading Angle (in Degrees) relative to last gyro reset.
+     *                If a relative angle is required, add/subtract from current heading.
+     * @param speed Desired speed of turn. (range 0 to +1.0)
+     */
+    public void turnToHeading(double heading, double speed) {
+        setRunModeForAllWheels(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        HeadingTelemetry headingTelemetry = new HeadingTelemetry("Turning");
+        headingTelemetry.setTargetHeading(heading);
+
+        // Run getSteeringCorrection() once to pre-calculate the current error
+        double headingSpeedAdjustment = getHeadingCorrection(heading, WHEEL_DRIVE_GAIN_FACTOR);
+
+        // keep looping while we are still active, and not on heading.
+        while (myOpMode.opModeIsActive() && (Math.abs(headingSpeedAdjustment) > HEADING_THRESHOLD)) {
+            // Determine required steering to keep on heading
+            headingSpeedAdjustment = getHeadingCorrection(heading, WHEEL_TURN_GAIN_FACTOR);
+            // Clip the speed to the maximum permitted value.
+            headingSpeedAdjustment = Range.clip(headingSpeedAdjustment, -speed, speed);
+
+            headingTelemetry.updateHeadingData(headingSpeedAdjustment);
+
+            // Pivot in place by applying the turning correction
+            setPowerAllWheels(0, headingSpeedAdjustment);
+            headingTelemetry.updateWheelData();
+        }
+
+        setPowerAllWheels(0); //Whoa
+        headingTelemetry.reset();
+    }
+
+    /**
+     * Calculate a motor speed that can be used to turn the robot to the desiredHeading.
+     * Get the difference between the passed desiredHeading and the actual heading.
+     * Normalize the difference to be in terms of yaw (+/- 180 degrees).
+     * Multiply the difference by gainFactor to get a motor speed (which will never
+     * be > 1 or < -1).
+     * @param desiredHeading yaw degrees (+/- 180)
+     * @param gainFactor factor to convert heading difference to a motor speed
+     * @return motor speed in the range of -1 to 1.
+     */
+    public double getHeadingCorrection(double desiredHeading, double gainFactor) {
+        double headingError = desiredHeading - this.getHeadingDegrees();
+
+        // Normalize the error to be within +/- 180 degrees
+        while (headingError > 180)  headingError -= 360;
+        while (headingError <= -180) headingError += 360;
+
+        // Multiply the error by the gain to determine the required steering correction.
+        // Limit the result to +/- 1.0
+        return Range.clip(headingError * gainFactor, -1, 1);
+    }
+
+    /**
      * Set the RunMode for all wheel motors to the passed runMode.
-     * @param runMode
+     * @param runMode DcMotor.RunMode
      */
     public void setRunModeForAllWheels(DcMotor.RunMode runMode) {
         leftFrontWheel.setMode(runMode);
@@ -359,8 +474,36 @@ public class RobotHardware {
     }
 
     /**
+     * Adjust the left and right motor speeds by the passed
+     * headingSpeedAdjustment, then set power to the left
+     * and right wheels to those powers.
+     *
+     * For example, setPowerAllWheels(.4, -.6) sets the left motors
+     * to 1 and the right motors to -.2.
+     * @param speed - power of the motor, a value in the interval [-1.0, 1.0]
+     * @param headingSpeedAdjustment - yaw in degrees (+/- 180)
+     */
+    public void setPowerAllWheels(double speed, double headingSpeedAdjustment) {
+        double leftSpeed = speed - headingSpeedAdjustment;
+        double rightSpeed = speed + headingSpeedAdjustment;
+
+        // Scale speeds down if either one exceeds +/- 1.0;
+        double max = Math.max(Math.abs(leftSpeed), Math.abs(rightSpeed));
+        if (max > 1.0)
+        {
+            leftSpeed /= max;
+            rightSpeed /= max;
+        }
+
+        leftFrontWheel.setPower(leftSpeed);
+        leftRearWheel.setPower(leftSpeed);
+        rightFrontWheel.setPower(rightSpeed);
+        rightRearWheel.setPower(rightSpeed);
+    }
+
+    /**
      * Set the Power for all wheels to the passed speed.
-     * @param speed
+     * @param speed - power of the motor, a value in the interval [-1.0, 1.0]
      */
     public void setPowerAllWheels(double speed) {
         leftFrontWheel.setPower(speed);
@@ -451,6 +594,7 @@ public class RobotHardware {
      * Turn robot by the passed angle.
      * @param angle
      */
+    @Deprecated
     public void adjustHeadingBy(double angle) {
         int leftFrontWheelPosition = leftFrontWheel.getCurrentPosition();
         int leftRearWheelPosition = leftRearWheel.getCurrentPosition();
@@ -494,7 +638,7 @@ public class RobotHardware {
      * @param tolerance
      * @return
      */
-    public boolean isWithinTolerance(double expectedValue, double actualValue, double tolerance) {
+    public static boolean isWithinTolerance(double expectedValue, double actualValue, double tolerance) {
         double delta = Math.abs(expectedValue - actualValue);
         return (delta <= tolerance);
     }
@@ -601,7 +745,7 @@ public class RobotHardware {
 
     /**
      * Return all color values from Color Sensor.
-     * @return RGBAcolor
+     * @return RGBAcolors
      */
     public RGBAcolors getSensorColors() {
         int red = colorSensor.red();
@@ -860,5 +1004,112 @@ public class RobotHardware {
         telemetry.setAutoClear(false); //Henceforth updates should not clear display.
 
         return currentItem;
+    }
+
+    /**
+     * Provides a convenient interface for setting and updating telemetry for
+     * robot movements during heading-driven events.
+     */
+    public class HeadingTelemetry {
+        private Telemetry.Item leftTargetPositionsItem;
+        private Telemetry.Item rightTargetPositionsItem;
+        private Telemetry.Item leftActualPositionsItem;
+        private Telemetry.Item rightActualPositionsItem;
+        private Telemetry.Item headingItem;
+        private Telemetry.Item headingAdjustmentItem;
+        private Telemetry.Item leftWheelSpeedsItem;
+        private Telemetry.Item rightWheelSpeedsItem;
+        private Telemetry telemetry = myOpMode.telemetry;
+        private double targetHeading = 0;
+        private double currentHeading = 0;
+
+        /**
+         * Construct and set up all telemetry.
+         * Passing anything but "Turning" (case insensitive) causes wheel targets and positions
+         * to also be sent to telemetry.
+         * @param motionHeading value such as "Driving" or "Turning"
+         */
+        public HeadingTelemetry(String motionHeading) {
+            telemetry.setAutoClear(false);
+            telemetry.addData("Motion", motionHeading);
+
+            if (!"Turning".equalsIgnoreCase(motionHeading)) {
+                telemetry.addData("Wheel Targets", "");
+                leftTargetPositionsItem = telemetry.addData("Left Tgt F:R", "%7d:%7d", 0, 0);
+                rightTargetPositionsItem = telemetry.addData("Right Tgt F:R", "%7d:%7d", 0, 0);
+
+                telemetry.addData("Wheel Positions", "");
+                leftActualPositionsItem = telemetry.addData("Left Pos F:R", "%7d:%7d", 0, 0);
+                rightActualPositionsItem = telemetry.addData("Right Pos F:R", "%7d:%7d", 0, 0);
+            }
+
+            headingItem = telemetry.addData("Heading-Target:Current", "%5.2f : %5.0f", targetHeading, currentHeading);
+            headingAdjustmentItem = telemetry.addData("Heading Adj:Speed Adj", "%5.1f : %5.1f",0,0);
+
+            telemetry.addData("Wheel Speeds", "");
+            leftWheelSpeedsItem = telemetry.addData("Left Whl Spds F:R", "%5.2f : %5.2f", 0, 0);
+            rightWheelSpeedsItem = telemetry.addData("Right Whl Spds F:R","%5.2f : %5.2f", 0, 0);
+        }
+
+        /**
+         * Set target wheel positions.
+         * If constructed with "Turning" (case insensitive), this method does nothing.
+         * @param leftFrontPosition
+         * @param leftRearPosition
+         * @param rightFrontPosition
+         * @param rightRearPosition
+         */
+        public void setTargetPositions(int leftFrontPosition, int leftRearPosition, int rightFrontPosition, int rightRearPosition) {
+            if (leftTargetPositionsItem == null)
+                return;
+            leftTargetPositionsItem.setValue("%7d:%7d", leftFrontPosition, leftRearPosition);
+            rightTargetPositionsItem.setValue("%7d:%7d", rightFrontPosition, rightRearPosition);
+            telemetry.update();
+        }
+
+        /**
+         * Update actual wheel positions and speeds.
+         * If constructed with "Turning" (case insensitive), actual position data is ignored.
+         */
+        public void updateWheelData() {
+            if (leftActualPositionsItem != null) {
+                leftActualPositionsItem.setValue("%7d:%7d", leftFrontWheel.getCurrentPosition(), leftRearWheel.getCurrentPosition());
+                rightActualPositionsItem.setValue("%7d:%7d", rightFrontWheel.getCurrentPosition(), rightRearWheel.getCurrentPosition());
+            }
+
+            leftWheelSpeedsItem.setValue("%5.2f : %5.2f", leftFrontWheel.getPower(), leftRearWheel.getPower());
+            rightWheelSpeedsItem.setValue("%5.2f : %5.2f", rightFrontWheel.getPower(), rightRearWheel.getPower());
+
+            telemetry.update();
+        }
+
+        /**
+         * Set the target heading telemetry
+         * @param heading Target
+         */
+        public void setTargetHeading(double heading) {
+            targetHeading = heading;
+            headingItem.setValue("%5.2f : %5.0f", targetHeading, currentHeading);
+            telemetry.update();
+        }
+
+        /**
+         * Update all heading telemetry.
+         * @param speedAdjustment Speed adjustment to show in telemetry
+         */
+        public void updateHeadingData(double speedAdjustment) {
+            currentHeading = getHeadingDegrees();
+            headingItem.setValue("%5.2f : %5.0f", targetHeading, currentHeading);
+            headingAdjustmentItem.setValue("%5.1f : %5.1f", targetHeading - currentHeading, speedAdjustment);
+            telemetry.update();
+        }
+
+        /**
+         * Telemetry Auto Clear is set to false when this class is constructed.
+         * Call this once when finished with the instance to set Auto Clear to true.
+         */
+        public void reset() {
+            this.telemetry.setAutoClear(true);
+        }
     }
 }

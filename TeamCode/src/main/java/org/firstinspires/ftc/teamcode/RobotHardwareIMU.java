@@ -42,8 +42,10 @@ public class RobotHardwareIMU {
 
     private void initIMU() {
         imu = myOpMode.hardwareMap.get(IMU.class, "imu");
-
+        //Define hub orientation.
         ImuOrientationOnRobot imuOrientation = new RevHubOrientationOnRobot(IMU_LOGO_DIRECTION, IMU_USB_DIRECTION);
+        //Initialize IMU instance with hub orientation.
+        imu.initialize((new IMU.Parameters(imuOrientation)));
     }
 
     /**

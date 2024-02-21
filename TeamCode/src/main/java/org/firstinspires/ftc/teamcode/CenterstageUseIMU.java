@@ -8,17 +8,13 @@ public class CenterstageUseIMU extends LinearOpMode {
         RobotHardware robot = new RobotHardware(this);
         robot.init();
 
-        double expectedHeading = 90;
-        double actualHeading;
-        double tolerance = 4; //degrees
-
         while (opModeIsActive()) {
-            robot.autoDriveRobot(50, 50);  //Drive straight
-            robot.autoDriveRobot(50, -50); //Turn 90 degrees
-            actualHeading = robot.getHeadingDegrees();
-            if (!robot.isWithinTolerance(expectedHeading, actualHeading, tolerance)) {
-                robot.adjustHeadingBy(expectedHeading - actualHeading);
-            }
+            //Drive straight
+            robot.autoDriveRobot(50, 50);
+            //Drive 50 inches on a -90 degree heading.
+            robot.autoDriveRobotWithHeading(50, -90, RobotHardware.DEFAULT_WHEEL_MOTOR_SPEED);
+            //Turn left 45 degrees.
+            robot.turnToHeading(45, RobotHardware.DEFAULT_WHEEL_MOTOR_SPEED);
         }
     }
 }
