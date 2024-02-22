@@ -1,0 +1,1 @@
+typeSearchIndex = [{"l":"All Classes and Interfaces","u":"allclasses-index.html"},{"p":"org.firstinspires.ftc.teamcode","l":"RobotHardware.HeadingTelemetry"},{"p":"org.firstinspires.ftc.teamcode","l":"RobotHardware"}];updateSearchResults();
