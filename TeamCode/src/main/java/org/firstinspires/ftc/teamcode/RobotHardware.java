@@ -419,11 +419,13 @@ public class RobotHardware {
         HeadingTelemetry headingTelemetry = new HeadingTelemetry("Turning");
         headingTelemetry.setTargetHeading(heading);
 
-        // Run getSteeringCorrection() once to pre-calculate the current error
-        double headingSpeedAdjustment = getHeadingCorrection(heading, WHEEL_DRIVE_GAIN_FACTOR);
+        // Initialize headingDelta with diff between desired and actual heading,
+        // then recalculate during while loop.
+        double headingDelta = heading - getHeadingDegrees();
+        double headingSpeedAdjustment;
 
         // keep looping while we are still active, and not on heading.
-        while (myOpMode.opModeIsActive() && (Math.abs(headingSpeedAdjustment) > HEADING_THRESHOLD)) {
+        while (myOpMode.opModeIsActive() && (Math.abs(headingDelta) > HEADING_THRESHOLD)) {
             // Determine required steering to keep on heading
             headingSpeedAdjustment = getHeadingCorrection(heading, WHEEL_TURN_GAIN_FACTOR);
             // Clip the speed to the maximum permitted value.
@@ -434,6 +436,8 @@ public class RobotHardware {
             // Pivot in place by applying the turning correction
             setPowerAllWheels(0, headingSpeedAdjustment);
             headingTelemetry.updateWheelData();
+
+            headingDelta = heading - getHeadingDegrees();
         }
 
         setPowerAllWheels(0); //Whoa
@@ -478,14 +482,14 @@ public class RobotHardware {
      * headingSpeedAdjustment, then set power to the left
      * and right wheels to those powers.
      *
-     * For example, setPowerAllWheels(.4, -.6) sets the left motors
-     * to 1 and the right motors to -.2.
+     * For example, setPowerAllWheels(.4, .6) sets the left motors
+     * to -.2 and the right motors to 1.
      * @param speed - power of the motor, a value in the interval [-1.0, 1.0]
      * @param headingSpeedAdjustment - yaw in degrees (+/- 180)
      */
     public void setPowerAllWheels(double speed, double headingSpeedAdjustment) {
-        double leftSpeed = speed - headingSpeedAdjustment;
-        double rightSpeed = speed + headingSpeedAdjustment;
+        double leftSpeed = speed + headingSpeedAdjustment;
+        double rightSpeed = speed - headingSpeedAdjustment;
 
         // Scale speeds down if either one exceeds +/- 1.0;
         double max = Math.max(Math.abs(leftSpeed), Math.abs(rightSpeed));
@@ -1044,11 +1048,11 @@ public class RobotHardware {
             }
 
             headingItem = telemetry.addData("Heading-Target:Current", "%5.2f : %5.0f", targetHeading, currentHeading);
-            headingAdjustmentItem = telemetry.addData("Heading Adj:Speed Adj", "%5.1f : %5.1f",0,0);
+            headingAdjustmentItem = telemetry.addData("Heading Adj:Speed Adj", "%5.1f : %5.1f",0.0, 0.0);
 
             telemetry.addData("Wheel Speeds", "");
-            leftWheelSpeedsItem = telemetry.addData("Left Whl Spds F:R", "%5.2f : %5.2f", 0, 0);
-            rightWheelSpeedsItem = telemetry.addData("Right Whl Spds F:R","%5.2f : %5.2f", 0, 0);
+            leftWheelSpeedsItem = telemetry.addData("Left Whl Spds F:R", "%5.2f : %5.2f", 0.0, 0.0);
+            rightWheelSpeedsItem = telemetry.addData("Right Whl Spds F:R","%5.2f : %5.2f", 0.0, 0.0);
         }
 
         /**
