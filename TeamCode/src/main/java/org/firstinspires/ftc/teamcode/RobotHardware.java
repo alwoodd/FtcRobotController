@@ -95,7 +95,7 @@ public class RobotHardware {
     // Increase these numbers if the heading does not corrects strongly enough (eg: a heavy robot or using tracks)
     // Decrease these numbers if the heading does not settle on the correct value (eg: very agile robot with omni wheels)
     static final double WHEEL_DRIVE_GAIN_FACTOR = .03;  // Larger is more responsive, but also less stable
-    static final double WHEEL_TURN_GAIN_FACTOR  = 0.02; // Larger is more responsive, but also less stable
+    static final double WHEEL_TURN_GAIN_FACTOR  = .02;  // Larger is more responsive, but also less stable
 
     static final double ROBOT_TRACK_WIDTH_INCHES = 16;
     static final double DEFAULT_WHEEL_MOTOR_SPEED = .4;
@@ -287,8 +287,12 @@ public class RobotHardware {
 
     private void initIMU() {
         imu = myOpMode.hardwareMap.get(IMU.class, "imu");
-
+        //Define hub orientation.
         ImuOrientationOnRobot imuOrientation = new RevHubOrientationOnRobot(IMU_LOGO_DIRECTION, IMU_USB_DIRECTION);
+        //Initialize IMU instance with hub orientation.
+        imu.initialize((new IMU.Parameters(imuOrientation)));
+        //Reset heading/yaw to zero.
+        imu.resetYaw();
     }
 
     /**
@@ -389,13 +393,13 @@ public class RobotHardware {
         setPowerAllWheels(Math.abs(speed));
 
         while (myOpMode.opModeIsActive() && leftFrontWheel.isBusy() && leftRearWheel.isBusy() && rightFrontWheel.isBusy() && rightRearWheel.isBusy()) {
-            double headingSpeedAdjustment = getHeadingCorrection(heading, WHEEL_DRIVE_GAIN_FACTOR);
-            headingTelemetry.updateHeadingData(headingSpeedAdjustment);
+            double headingSpeedAdjustment = getHeadingCorrection(heading, WHEEL_DRIVE_GAIN_FACTOR, speed);
 
             // if driving in reverse, the motor correction also needs to be reversed
             if (inches < 0)
                 headingSpeedAdjustment *= -1.0;
 
+            headingTelemetry.updateHeadingData(headingSpeedAdjustment);
             setPowerAllWheels(speed, headingSpeedAdjustment);
             headingTelemetry.updateWheelData();
         }
@@ -411,7 +415,7 @@ public class RobotHardware {
      *  2) Driver stops the OpMode running.
      * @param heading Absolute Heading Angle (in Degrees) relative to last gyro reset.
      *                If a relative angle is required, add/subtract from current heading.
-     * @param speed Desired speed of turn. (range 0 to +1.0)
+     * @param speed Desired speed of turn. (range 0 to +speed)
      */
     public void turnToHeading(double heading, double speed) {
         setRunModeForAllWheels(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -427,10 +431,7 @@ public class RobotHardware {
         // keep looping while we are still active, and not on heading.
         while (myOpMode.opModeIsActive() && (Math.abs(headingDelta) > HEADING_THRESHOLD)) {
             // Determine required steering to keep on heading
-            headingSpeedAdjustment = getHeadingCorrection(heading, WHEEL_TURN_GAIN_FACTOR);
-            // Clip the speed to the maximum permitted value.
-            headingSpeedAdjustment = Range.clip(headingSpeedAdjustment, -speed, speed);
-
+            headingSpeedAdjustment = getHeadingCorrection(heading, WHEEL_TURN_GAIN_FACTOR, speed);
             headingTelemetry.updateHeadingData(headingSpeedAdjustment);
 
             // Pivot in place by applying the turning correction
@@ -448,13 +449,14 @@ public class RobotHardware {
      * Calculate a motor speed that can be used to turn the robot to the desiredHeading.
      * Get the difference between the passed desiredHeading and the actual heading.
      * Normalize the difference to be in terms of yaw (+/- 180 degrees).
-     * Multiply the difference by gainFactor to get a motor speed (which will never
-     * be > 1 or < -1).
+     * Multiply the difference by gainFactor to get a potential motor speed.
+     * Clip the potential motor speed to the maxSpeed.
      * @param desiredHeading yaw degrees (+/- 180)
      * @param gainFactor factor to convert heading difference to a motor speed
-     * @return motor speed in the range of -1 to 1.
+     * @param maxSpeed maximum speed returned.
+     * @return motor speed in the range of -maxSpeed to maxSpeed.
      */
-    public double getHeadingCorrection(double desiredHeading, double gainFactor) {
+    public double getHeadingCorrection(double desiredHeading, double gainFactor, double maxSpeed) {
         double headingError = desiredHeading - this.getHeadingDegrees();
 
         // Normalize the error to be within +/- 180 degrees
@@ -462,8 +464,8 @@ public class RobotHardware {
         while (headingError <= -180) headingError += 360;
 
         // Multiply the error by the gain to determine the required steering correction.
-        // Limit the result to +/- 1.0
-        return Range.clip(headingError * gainFactor, -1, 1);
+        // Clip the correction to the maximum permitted value.
+        return Range.clip(headingError * gainFactor, -maxSpeed, maxSpeed);
     }
 
     /**
@@ -478,18 +480,20 @@ public class RobotHardware {
     }
 
     /**
-     * Adjust the left and right motor speeds by the passed
-     * headingSpeedAdjustment, then set power to the left
-     * and right wheels to those powers.
-     *
-     * For example, setPowerAllWheels(.4, .6) sets the left motors
-     * to -.2 and the right motors to 1.
-     * @param speed - power of the motor, a value in the interval [-1.0, 1.0]
-     * @param headingSpeedAdjustment - yaw in degrees (+/- 180)
+     * Adjust the baseSpeed by  +/- headingSpeedAdjustment, then set power to the left
+     * and right wheels to those powers. Scale down both left and right motor speeds
+     * if either is > 1.0 or < -1.0.
+     * @param baseSpeed - base speed of the motor to which headingSpeedAdjustment will be applied.
+     * @param headingSpeedAdjustment - power adjustment applied to baseSpeed to turn the robot to the desiredHeading.
      */
-    public void setPowerAllWheels(double speed, double headingSpeedAdjustment) {
-        double leftSpeed = speed + headingSpeedAdjustment;
-        double rightSpeed = speed - headingSpeedAdjustment;
+    public void setPowerAllWheels(double baseSpeed, double headingSpeedAdjustment) {
+        /**
+         * If your robot uses a negative power to move forward,
+         * you'll need to subtract for leftSpeed, and add for
+         * rightSpeed.
+         */
+        double leftSpeed = baseSpeed + headingSpeedAdjustment;
+        double rightSpeed = baseSpeed - headingSpeedAdjustment;
 
         // Scale speeds down if either one exceeds +/- 1.0;
         double max = Math.max(Math.abs(leftSpeed), Math.abs(rightSpeed));
@@ -551,7 +555,7 @@ public class RobotHardware {
 
     /**
      * Return robot's current heading (yaw) in degrees.
-     * @return
+     * @return heading in degrees
      */
     public double getHeadingDegrees() {
         return imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
