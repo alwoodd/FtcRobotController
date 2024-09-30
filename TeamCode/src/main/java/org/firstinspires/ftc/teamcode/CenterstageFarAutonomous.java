@@ -23,7 +23,5 @@ public class CenterstageFarAutonomous extends LinearOpMode {
             robot.autoDriveRobot(20, -20); //Turn
             robot.autoDriveRobot(50, 50);  //Straight again
         }
-
-        robot.shutDown();
     }
 }

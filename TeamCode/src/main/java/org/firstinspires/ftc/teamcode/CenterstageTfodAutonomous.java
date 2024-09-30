@@ -81,8 +81,6 @@ public class CenterstageTfodAutonomous extends LinearOpMode {
                 sleep(20);
             }
         }
-
-        robot.shutDown();
     }   // end runOpMode()
 
     /**
