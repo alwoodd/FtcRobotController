@@ -23,7 +23,5 @@ public class CenterstageNearAutonomous extends LinearOpMode {
             int rightInches = 50;
             robot.autoDriveRobot(leftInches, rightInches);
         }
-
-        robot.shutDown();
     }
 }

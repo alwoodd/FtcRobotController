@@ -1,7 +1,7 @@
 package org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration;
 
 /**
- * This is the Point class. This class handles storing information about vectors, which are
+ * This is the Vector class. This class handles storing information about vectors, which are
  * basically Points but using polar coordinates as the default. The main reason this class exists
  * is because some vector math needs to be done in the Follower, and dot products and cross
  * products of Points just don't seem right. Also, there are a few more methods in here that make
