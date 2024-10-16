@@ -49,7 +49,7 @@ import org.firstinspires.ftc.vision.VisionPortal;
 /**
  * Instead of each Op Mode class redefining the robot's hardware resources within its implementation,
  * This RobotHardware class has a given robot's component resources defined and set up all in one place.
- * It also has convenience methods like driveRobot(), setArmPower(), setHandPosition(), etc. that work for that robot.
+ * It also has convenience methods like getSensorDistance(), setArmPower(), setHandPosition(), etc. that work for that robot.
  *
  * Where possible, the actual hardware objects are "abstracted" (or hidden) so the OpMode code just makes calls into the class,
  * rather than accessing the internal hardware directly. This is why the objects are declared "private".
@@ -103,7 +103,7 @@ public class RobotHardware {
     static final double ARM_BACKDROP_VOLTAGE = 1.4;
 
     /**
-     * The one and only constructor requires a reference to an OpMode.
+     * The one and only constructor requires a reference to a LinearOpMode.
      * @param opmode
      */
     public RobotHardware(LinearOpMode opmode) {

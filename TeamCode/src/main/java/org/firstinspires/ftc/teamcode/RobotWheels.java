@@ -6,6 +6,12 @@ import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
+/**
+ * This class contains only  team’s wheel motor component resources. Use this class if your team
+ * is not using Pedro Pathing.
+ * Additionally, this class has convenience methods, such as autoDriveRobot() and manuallyDriveRobot().
+ * Each OpMode then uses an instance of the single RobotWheels (if not using Pedro Pathing).
+ */
 public class RobotWheels {
     /* Declare OpMode members. */
     private final LinearOpMode myOpMode;   // gain access to methods in the calling OpMode.
@@ -40,7 +46,7 @@ public class RobotWheels {
 
 
     /**
-     * The one and only constructor requires a reference to an OpMode.
+     * The one and only constructor requires a reference to a LinearOpMode, and the RobotHardware.
      * @param opmode
      */
     public RobotWheels(LinearOpMode opmode, RobotHardware robotHardware) {
@@ -48,6 +54,9 @@ public class RobotWheels {
         this.robotHardware = robotHardware;
     }
 
+    /**
+     * Call init() to initialize all the robot's hardware.
+     */
     public void init() {
         initWheelMotors();
 
