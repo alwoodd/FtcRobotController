@@ -17,14 +17,19 @@ import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.config.ValueProvider;
 import com.acmerobotics.dashboard.config.reflection.ReflectionConfig;
 import com.acmerobotics.dashboard.config.variable.CustomVariable;
+import com.acmerobotics.dashboard.OpModeInfo;
 import com.acmerobotics.dashboard.message.Message;
 import com.acmerobotics.dashboard.message.redux.InitOpMode;
 import com.acmerobotics.dashboard.message.redux.ReceiveGamepadState;
+import com.acmerobotics.dashboard.message.redux.ReceiveHardwareConfigList;
 import com.acmerobotics.dashboard.message.redux.ReceiveImage;
 import com.acmerobotics.dashboard.message.redux.ReceiveOpModeList;
 import com.acmerobotics.dashboard.message.redux.ReceiveRobotStatus;
+import com.acmerobotics.dashboard.message.redux.SetHardwareConfig;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.qualcomm.ftccommon.FtcEventLoop;
+import com.qualcomm.ftccommon.configuration.RobotConfigFile;
+import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -33,21 +38,34 @@ import com.qualcomm.robotcore.eventloop.opmode.OpModeManager;
 import com.qualcomm.robotcore.eventloop.opmode.OpModeManagerImpl;
 import com.qualcomm.robotcore.eventloop.opmode.OpModeRegistrar;
 import com.qualcomm.robotcore.hardware.Gamepad;
+import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.RobotLog;
 import com.qualcomm.robotcore.util.ThreadPool;
 import com.qualcomm.robotcore.util.WebHandlerManager;
 import com.qualcomm.robotcore.util.WebServer;
+import com.qualcomm.ftccommon.configuration.RobotConfigFileManager;
 import dalvik.system.DexFile;
 import fi.iki.elonen.NanoHTTPD;
 import fi.iki.elonen.NanoWSD;
+import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.net.HttpURLConnection;
+import java.net.InetAddress;
+import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import org.firstinspires.ftc.ftccommon.external.OnCreate;
@@ -82,6 +100,8 @@ public class FtcDashboard implements OpModeManagerImpl.Notifications {
 
     private static final String PREFS_NAME = "FtcDashboard";
     private static final String PREFS_AUTO_ENABLE_KEY = "autoEnable";
+
+    private static final String HARDWARE_CATEGORY = "__hardware__";
 
     private static FtcDashboard instance;
 
@@ -198,7 +218,7 @@ public class FtcDashboard implements OpModeManagerImpl.Notifications {
 
     private final Mutex<OpModeAndStatus> activeOpMode = new Mutex<>(new OpModeAndStatus());
 
-    private final Mutex<List<String>> opModeList = new Mutex<>(new ArrayList<>());
+    private final Mutex<List<OpModeInfo>> opModeInfoList = new Mutex<>(new ArrayList<>());
 
     private ExecutorService gamepadWatchdogExecutor;
     private long lastGamepadTimestamp;
@@ -207,6 +227,9 @@ public class FtcDashboard implements OpModeManagerImpl.Notifications {
 
     private TextView connectionStatusTextView;
     private LinearLayout parentLayout;
+
+    private RobotConfigFileManager hardwareConfigManager = new RobotConfigFileManager();
+    private final Mutex<SortedMap<String, RobotConfigFile>> hardwareConfigList = new Mutex<>(new TreeMap<>());
 
     private static class OpModeAndStatus {
         public OpMode opMode;
@@ -243,15 +266,45 @@ public class FtcDashboard implements OpModeManagerImpl.Notifications {
         public void run() {
             RegisteredOpModes.getInstance().waitOpModesRegistered();
 
-            opModeList.with(l -> {
-                l.clear();
-                for (OpModeMeta opModeMeta : RegisteredOpModes.getInstance().getOpModes()) {
-                    if (opModeMeta.flavor != OpModeMeta.Flavor.SYSTEM) {
-                        l.add(opModeMeta.name);
-                    }
+            List<OpModeInfo> infoList = new ArrayList<>();
+            
+            for (OpModeMeta opModeMeta : RegisteredOpModes.getInstance().getOpModes()) {
+                if (opModeMeta.flavor != OpModeMeta.Flavor.SYSTEM) {
+                    infoList.add(new OpModeInfo(opModeMeta.name, opModeMeta.group));
                 }
-                Collections.sort(l);
-                sendAll(new ReceiveOpModeList(l));
+            }
+            
+            // Sort op mode info list by group, then by name
+            infoList.sort((a, b) -> {
+                int groupComparison = a.getGroup().compareToIgnoreCase(b.getGroup());
+                if (groupComparison != 0) {
+                    return groupComparison;
+                }
+                return a.getName().compareToIgnoreCase(b.getName());
+            });
+            
+            // Update the shared opModeInfoList
+            opModeInfoList.with(infoListShared -> {
+                infoListShared.clear();
+                infoListShared.addAll(infoList);
+            });
+            
+            sendAll(new ReceiveOpModeList(infoList));
+        }
+    }
+
+    private class ListHardwareConfigsRunnable implements Runnable {
+        @Override
+        public void run(){
+            hardwareConfigList.with(l -> {
+                l.clear();
+                for (RobotConfigFile file : hardwareConfigManager.getXMLFiles()){
+                    l.put(file.getName(), file);
+                }
+                sendAll(new ReceiveHardwareConfigList(
+                        new ArrayList<>(l.keySet()),
+                        hardwareConfigManager.getActiveConfig().getName()
+                ));
             });
         }
     }
@@ -499,6 +552,161 @@ public class FtcDashboard implements OpModeManagerImpl.Notifications {
         }
     }
 
+    private class LimelightCameraStreamRunnable implements Runnable {
+        private HttpURLConnection limelightConnection;
+        private BufferedInputStream byteStream;
+        private double maxFps;
+        private String ipAddress;
+        private ElapsedTime timeSinceLastFrame = new ElapsedTime();
+        private int failureCount = 0;
+
+        private LimelightCameraStreamRunnable(String ipAddress, double maxFps) {
+            this.maxFps = maxFps;
+            this.ipAddress = ipAddress;
+        }
+
+        /**
+         * @return true if the connection has been successfully established
+         */
+        private boolean initialize() {
+            try {
+                this.limelightConnection = (HttpURLConnection) new URL("http://" + ipAddress + ":5802").openConnection();
+                limelightConnection.connect();
+                if (limelightConnection.getResponseCode() != 200) {
+                    throw new RuntimeException();
+                }
+                byteStream = new BufferedInputStream(limelightConnection.getInputStream());
+                return true;
+            } catch (Exception e) {
+                RobotLog.ee(TAG, "Failed to connect to the Limelight camera stream.");
+                limelightConnection.disconnect();
+                limelightConnection = null;
+                return false;
+            }
+        }
+
+        @Override
+        public void run() {
+            while (!Thread.currentThread().isInterrupted()) {
+                try {
+                    if (core.clientCount() == 0) {
+                        if (limelightConnection != null) { // Close connection to avoid backlog of frames
+                            reset();
+                        }
+                        Thread.sleep(250);
+                        continue;
+                    }
+
+                    if (limelightConnection == null) {
+                        if (failureCount > 3) { // Something is very broken, this isn't going to work
+                            RobotLog.ee(TAG, "Limelight camera stream repeatedly failing; ending stream.");
+                            return;
+                        }
+                        if (!initialize()) {
+                            // Reset and try again (until we fail the check above)
+                            failureCount++;
+                            reset();
+                            continue;
+                        }
+                    }
+                    /*
+                     * Limelights expose an MJPEG video-stream on port 5802. See this documentation:
+                     * https://github.com/LimelightVision/LimelightDocs/blob/master/docs/grip_software.rst
+                     *
+                     * Relevant excerpt:
+                     * "Limelight has an additional video stream on port 5802 which can be accessed
+                     * primarily for use with GRIP or other applications like it. This video stream
+                     * is uncompressed (or very lightly compressed) and has no cross-hair or other
+                     * overlays drawn on the image."
+                     */
+
+                    /*
+                     * MJPEG frame format reference: (note: newlines are 2 bytes, \r\n)
+                     * --boundarydonotcross
+                     * Content-Type: image/jpeg
+                     * Content-Length: 106747
+                     * X-Timestamp: 0.000000
+                     *
+                     * [Binary JPEG]
+                     */
+
+                    // Start of frame
+
+                    /*
+                     * Implementation note: We use our own parsing function as opposed to a more standard
+                     * Reader because we need access to both the text data (headers) and binary data
+                     * (image) at different points. Most (all?) Readers internally use buffers which
+                     * take more bytes from the stream than we read, causing binary data to be swallowed
+                     * into an endless void we can't retrieve from.
+                     */
+
+                    readLine(byteStream); // Skip useless headers
+                    readLine(byteStream);
+                    String contentLength = readLine(byteStream); // Get the Content-Length header.
+                    String num = contentLength.replaceAll("[^0-9]", ""); // Filter to the integer
+                    int length = Integer.parseInt(num);
+                    readLine(byteStream);
+                    readLine(byteStream); // Go to start of binary
+
+                    byteStream.mark(2);
+                    if(byteStream.read() != 0xFF || byteStream.read() != 0xD8) { // All JPEGs start with FFD8; quick sanity-check
+                        RobotLog.ee(TAG, "Invalid/Unexpected Limelight JPEG data (failed at start); restarting stream");
+                        // Can't just continue because it will parse binary data as headers next loop
+                        // Instead, we'll live with the dropped frames and just restart the stream
+                        failureCount++;
+                        reset();
+                        continue;
+                    }
+                    byteStream.reset();
+
+                    // Get image data
+                    byte[] out = new byte[length];
+                    int sum = 0;
+                    while (sum < length){ // Read known image length into array
+                        sum += byteStream.read(out, sum, length - sum); // read will read a maximum of 8192 bytes
+                        // I love that that fact isn't documented
+                    }
+
+                    // All JPEGs end with 0xFF and 0xD9; sanity check.
+                    if (out[length - 2] != (byte) 0xFF || out[length - 1] != (byte) 0xD9) {
+                        RobotLog.ee(TAG, "Invalid/Unexpected Limelight JPEG data (failed at end); restarting stream.");
+                        failureCount++;
+                        reset();
+                        continue;
+                    }
+
+                    // Send only frames which won't exceed our max frame-rate
+                    if (maxFps == 0 || timeSinceLastFrame.milliseconds() > (1000 / maxFps)) {
+                        timeSinceLastFrame.reset();
+                        sendAll(new ReceiveImage(Base64.encodeToString(out, Base64.DEFAULT)));
+                    }
+                } catch (InterruptedException | IOException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+            reset(); // Clean up resources
+        }
+
+        private void reset() {
+            limelightConnection.disconnect();
+            limelightConnection = null; // Reset state
+            byteStream = null;
+        }
+
+        private String readLine(InputStream stream) throws IOException {
+            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+            while(true) { // Read until \n
+                int raw = stream.read();
+                if (raw == -1) break; // End of stream
+                byte chr = (byte) raw;
+                if (chr == '\n') break; // End of line
+                if (chr != '\r') buffer.write(chr);
+            }
+
+            return buffer.toString(Charset.defaultCharset().name());
+        }
+    }
+
     private static final Set<String> IGNORED_PACKAGES = new HashSet<>(Arrays.asList(
         "java",
         "android",
@@ -579,9 +787,18 @@ public class FtcDashboard implements OpModeManagerImpl.Notifications {
         protected void onOpen() {
             sh.onOpen();
 
-            opModeList.with(l -> {
-                if (l.size() > 0) {
-                    send(new ReceiveOpModeList(l));
+            opModeInfoList.with(infoList -> {
+                if (!infoList.isEmpty()) {
+                    send(new ReceiveOpModeList(new ArrayList<>(infoList)));
+                }
+            });
+
+            hardwareConfigList.with(l -> {
+                if (!l.isEmpty()){
+                    send(new ReceiveHardwareConfigList(
+                            new ArrayList<>(l.keySet()),
+                            hardwareConfigManager.getActiveConfig().getName())
+                    );
                 }
             });
 
@@ -626,6 +843,44 @@ public class FtcDashboard implements OpModeManagerImpl.Notifications {
                 case RECEIVE_GAMEPAD_STATE: {
                     ReceiveGamepadState castMsg = (ReceiveGamepadState) msg;
                     updateGamepads(castMsg.getGamepad1(), castMsg.getGamepad2());
+                    break;
+                }
+                case SET_HARDWARE_CONFIG: {
+                    String hardwareConfigName = ((SetHardwareConfig) msg).getHardwareConfigName();
+
+                    activeOpMode.with(o -> {
+                        // Don't allow changing the config unless stopped. Who knows what undefined behavior that would cause
+                       if(o.status != RobotStatus.OpModeStatus.STOPPED &&
+                               !opModeManager.getActiveOpModeName().equals(OpModeManager.DEFAULT_OP_MODE_NAME)) {
+                           return;
+                       }
+
+                       hardwareConfigList.with(l -> {
+                           hardwareConfigManager.setActiveConfig(false, l.get(hardwareConfigName));
+                       });
+
+                        // Soft-restart to allow the new config to take effect
+                        // This is admittedly pretty sketchy so we'll do it in a try/catch
+                        try {
+                            // We can't just cast this to FtcRobotControllerActivity because that would create a dependency
+                            Activity robotControllerActivity = AppUtil.getInstance().getRootActivity();
+                            // When called, this method has the ability to perform a restart
+                            Method selectedMethod = robotControllerActivity.getClass().getMethod("onOptionsItemSelected", MenuItem.class);
+
+                            int id = robotControllerActivity.getResources().getIdentifier("action_restart_robot", "id", "com.qualcomm.ftcrobotcontroller");
+
+                            // Spoofs the MenuItem parameter to imitate a restart button-press
+                            MenuItem item = (MenuItem) Proxy.newProxyInstance(
+                                    MenuItem.class.getClassLoader(),
+                                    new Class<?>[] { MenuItem.class },
+                                    (proxy, method, args) -> "getItemId".equals(method.getName()) ? id : null
+                            );
+
+                            selectedMethod.invoke(robotControllerActivity, item);
+                        } catch (Exception e){
+                            RobotLog.ww(TAG, "Something went wrong when reflecting to restart the robot.");
+                        }
+                    });
                     break;
                 }
                 default: {
@@ -879,6 +1134,10 @@ public class FtcDashboard implements OpModeManagerImpl.Notifications {
 
         Thread t = new Thread(new ListOpModesRunnable());
         t.start();
+
+        // This gets called every time the robot soft-restarts, which includes when modifying/switching configs
+        Thread hardwareConfigThread = new Thread(new ListHardwareConfigsRunnable());
+        hardwareConfigThread.start();
     }
 
     private void internalPopulateMenu(Menu menu) {
@@ -1034,6 +1293,30 @@ public class FtcDashboard implements OpModeManagerImpl.Notifications {
     }
 
     /**
+     * Runs {@code function} with the hardware subtree of the configuration root.
+     *
+     * <p>If the top-level hardware category ("{@value #HARDWARE_CATEGORY}") does not
+     * yet exist it will be created. The provided {@link CustomVariableConsumer} is
+     * invoked while holding the same exclusive config-root lock used by
+     * {@link #withConfigRoot(CustomVariableConsumer)}, so callers may safely modify the
+     * hardware config tree inside the consumer. Do not leak references to the
+     * config tree outside the consumer.</p>
+     *
+     * @param function consumer that receives the {@link CustomVariable} representing the
+     *                 hardware category and may modify it as needed
+     */
+    public void withHardwareRoot(CustomVariableConsumer function) {
+        withConfigRoot(root -> {
+            CustomVariable hardwareVar = (CustomVariable) root.getVariable(HARDWARE_CATEGORY);
+            if (hardwareVar == null) {
+                hardwareVar = new CustomVariable();
+                root.putVariable(HARDWARE_CATEGORY, hardwareVar);
+            }
+            function.accept(hardwareVar);
+        });
+    }
+
+    /**
      * Add config variable with custom provider that is automatically removed when op mode ends.
      *
      * @param category top-level category
@@ -1123,6 +1406,33 @@ public class FtcDashboard implements OpModeManagerImpl.Notifications {
     }
 
     /**
+     * Sends a stream of camera frames from a Limelight3A camera at a regular interval.
+     *
+     * @param limelight the Limelight object
+     * @param maxFps maximum frames per second; 0 indicates unlimited
+     */
+    public void startCameraStream(Limelight3A limelight, double maxFps) {
+        if (!core.enabled) {
+            return;
+        }
+
+        InetAddress address;
+        try {
+            Field f = limelight.getClass().getDeclaredField("inetAddress");
+            f.setAccessible(true);
+            address = (InetAddress) f.get(limelight);
+        } catch (Exception e) {
+            RobotLog.ww(TAG, "Failed to retrieve the inetAddress through reflection");
+            return;
+        }
+
+        stopCameraStream();
+
+        cameraStreamExecutor = ThreadPool.newSingleThreadExecutor("camera stream");
+        cameraStreamExecutor.submit(new LimelightCameraStreamRunnable(address.getHostAddress(), maxFps));
+    }
+
+    /**
      * Returns the image quality used by {@link #sendImage(Bitmap)} and
      * {@link #startCameraStream(CameraStreamSource, double)}.
      */
@@ -1139,35 +1449,40 @@ public class FtcDashboard implements OpModeManagerImpl.Notifications {
     }
 
     public static void copyIntoSdkGamepad(ReceiveGamepadState.Gamepad src, Gamepad dst) {
-        dst.left_stick_x = src.left_stick_x;
-        dst.left_stick_y = src.left_stick_y;
-        dst.right_stick_x = src.right_stick_x;
-        dst.right_stick_y = src.right_stick_y;
+        // We need to copy from an intermediate so the SDK can handle the rising/falling edge detection
+        // Also, doing it like this means the SDK handles equivalencies between
+        // standard and Playstation buttons (i.e. converting A -> Cross and vice versa)
+        Gamepad intermediate = new Gamepad();
+        intermediate.left_stick_x = src.left_stick_x;
+        intermediate.left_stick_y = src.left_stick_y;
+        intermediate.right_stick_x = src.right_stick_x;
+        intermediate.right_stick_y = src.right_stick_y;
 
-        dst.dpad_up = src.dpad_up;
-        dst.dpad_down = src.dpad_down;
-        dst.dpad_left = src.dpad_left;
-        dst.dpad_right = src.dpad_right;
+        intermediate.dpad_up = src.dpad_up;
+        intermediate.dpad_down = src.dpad_down;
+        intermediate.dpad_left = src.dpad_left;
+        intermediate.dpad_right = src.dpad_right;
 
-        dst.a = src.a;
-        dst.b = src.b;
-        dst.x = src.x;
-        dst.y = src.y;
+        intermediate.a = src.a;
+        intermediate.b = src.b;
+        intermediate.x = src.x;
+        intermediate.y = src.y;
 
-        dst.guide = src.guide;
-        dst.start = src.start;
-        dst.back = src.back;
+        intermediate.guide = src.guide;
+        intermediate.start = src.start;
+        intermediate.back = src.back;
 
-        dst.left_bumper = src.left_bumper;
-        dst.right_bumper = src.right_bumper;
+        intermediate.left_bumper = src.left_bumper;
+        intermediate.right_bumper = src.right_bumper;
 
-        dst.left_stick_button = src.left_stick_button;
-        dst.right_stick_button = src.right_stick_button;
+        intermediate.left_stick_button = src.left_stick_button;
+        intermediate.right_stick_button = src.right_stick_button;
 
-        dst.left_trigger = src.left_trigger;
-        dst.right_trigger = src.right_trigger;
+        intermediate.left_trigger = src.left_trigger;
+        intermediate.right_trigger = src.right_trigger;
 
-        dst.touchpad = src.touchpad;
+        intermediate.touchpad = src.touchpad;
+        dst.copy(intermediate);
     }
 
     private void updateGamepads(ReceiveGamepadState.Gamepad gamepad1,

@@ -3,14 +3,17 @@ package com.acmerobotics.dashboard;
 import com.acmerobotics.dashboard.config.ValueProvider;
 import com.acmerobotics.dashboard.message.Message;
 import com.acmerobotics.dashboard.message.redux.InitOpMode;
+import com.acmerobotics.dashboard.message.redux.ReceiveHardwareConfigList;
 import com.acmerobotics.dashboard.message.redux.ReceiveOpModeList;
 import com.acmerobotics.dashboard.message.redux.ReceiveRobotStatus;
+import com.acmerobotics.dashboard.message.redux.SetHardwareConfig;
+import com.acmerobotics.dashboard.OpModeInfo;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
-import com.acmerobotics.dashboard.testopmode.TestOpMode;
 import com.acmerobotics.dashboard.testopmode.TestOpModeManager;
 import fi.iki.elonen.NanoHTTPD;
 import fi.iki.elonen.NanoWSD;
 import java.io.IOException;
+import java.util.List;
 import java.util.stream.Collectors;
 
 enum TestEnum {
@@ -24,6 +27,7 @@ public class TestDashboardInstance {
 
     final String DEFAULT_OP_MODE_NAME = "$Stop$Robot$";
     TestOpModeManager opModeManager = new TestOpModeManager();
+    TestRobotConfigManager hardwareConfigManager = new TestRobotConfigManager();
 
     private TelemetryPacket currentPacket;
 
@@ -58,11 +62,16 @@ public class TestDashboardInstance {
             sh.onOpen();
 
             opModeManager.setSendFun(this);
-            send(new ReceiveOpModeList(
-                opModeManager
-                    .getTestOpModes()
-                    .stream().map(TestOpMode::getName)
-                    .collect(Collectors.toList())
+            
+            List<OpModeInfo> opModeInfoList = opModeManager
+                .getTestOpModes()
+                .stream().map(testOpMode -> new OpModeInfo(testOpMode.getName(), "Test"))
+                .collect(Collectors.toList());
+            
+            send(new ReceiveOpModeList(opModeInfoList));
+            send(new ReceiveHardwareConfigList(
+                hardwareConfigManager.getTestHardwareConfigs(),
+                hardwareConfigManager.getActiveHardwareConfig()
             ));
         }
 
@@ -110,6 +119,17 @@ public class TestDashboardInstance {
                     break;
                 case STOP_OP_MODE:
                     opModeManager.stopOpMode();
+                    break;
+                case SET_HARDWARE_CONFIG:
+                    SetHardwareConfig setHardwareConfig = (SetHardwareConfig) msg;
+                    hardwareConfigManager.setHardwareConfig(setHardwareConfig.getHardwareConfigName());
+
+                    // In the testing instance we must resend this data manually or things will get out of sync.
+                    // In a live environment the restart will cause this data to be resent automatically.
+                    send(new ReceiveHardwareConfigList(
+                            hardwareConfigManager.getTestHardwareConfigs(),
+                            hardwareConfigManager.getActiveHardwareConfig()
+                    ));
                     break;
                 default:
                     System.out.println(msg.getType());
