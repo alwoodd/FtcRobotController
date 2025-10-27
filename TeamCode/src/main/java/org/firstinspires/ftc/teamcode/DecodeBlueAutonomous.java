@@ -3,32 +3,33 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
-import org.firstinspires.ftc.teamcode.pedroPathing.follower.Follower;
-import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.PathChain;
+import com.pedropathing.paths.PathChain;
 import org.firstinspires.ftc.teamcode.teamPedroPathing.AutonomousPedroPaths;
-import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroPathUtil;
+import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroPathConverter;
+import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroPathFollower;
 
 @Autonomous(name = "Blue alliance start from center wall")
-public class IntoTheDeepBlueAutonomous extends LinearOpMode {
+public class DecodeBlueAutonomous extends LinearOpMode {
 
     @Override
     public void runOpMode() throws InterruptedException {
         RobotHardware robot = new RobotHardware(this);
         robot.init();
 
-        Follower follower = new Follower(this.hardwareMap);
-        PedroPathUtil pedroPathUtil = new PedroPathUtil(this, follower);
+        PedroPathHardware pedroPathHardware = new PedroPathHardware(this);
 
-        AutonomousPedroPaths pedroPaths = new BluePedroPathsCenterWall();
+        AutonomousPedroPaths pedroPaths = new BluePedroPathsFrontWall(pedroPathHardware.getFollower());
 
-        PathChain initialPathChain = pedroPaths.pathFromWallToChamber(); //Have first path ready to go.
+        PathChain initialPathChain = pedroPaths.pathFromWallToLaunchZone(); //Have first path ready to go.
+
+        PedroPathFollower pedroPathFollower = new PedroPathFollower(this, pedroPathHardware.getFollower());
 
         waitForStart();
 
         if (opModeIsActive()) {
-            pedroPathUtil.followPathChain(initialPathChain);
+            pedroPathFollower.followPathChain(initialPathChain);
             putSpecimenOnChamber();
-            pedroPathUtil.followPathChain(pedroPaths.pathFromChamberToSpike());
+            pedroPathFollower.followPathChain(pedroPaths.pathFromChamberToSpike());
             pickupSpikeSample();
             //etc.
         }

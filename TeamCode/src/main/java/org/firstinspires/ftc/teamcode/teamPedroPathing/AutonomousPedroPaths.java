@@ -1,9 +1,9 @@
 package org.firstinspires.ftc.teamcode.teamPedroPathing;
 
-import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.PathChain;
+import com.pedropathing.paths.PathChain;
 
 public interface AutonomousPedroPaths {
-    PathChain pathFromWallToChamber();
+    PathChain pathFromWallToLaunchZone();
     PathChain pathFromChamberToSpike();
     PathChain pathFromSpikeToNetZone();
 }
