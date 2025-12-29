@@ -114,12 +114,14 @@ public class RobotHardware {
      * Call init() to initialize all the robot's hardware.
      */
     public void init() {
+/*
         initServos();
         initDistanceSensors();
         initColorSensor();
         initAnalogInputs();
         initArmMotors();
         initIMU();
+*/
 
         myOpMode.telemetry.addData(">", "Hardware Initialized");
         myOpMode.telemetry.update();

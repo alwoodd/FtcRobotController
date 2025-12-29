@@ -11,6 +11,7 @@ public class CenterstageDriverControlled  extends LinearOpMode {
         RobotHardware robot = new RobotHardware(this);
         robot.init();
         RobotWheels robotWheels = new RobotWheels(this, robot);
+        robotWheels.init();
 
         // Wait for the DS start button to be touched.
         telemetry.addData(">", "Touch Play to start OpMode");

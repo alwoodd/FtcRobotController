@@ -69,10 +69,10 @@ public class RobotWheels {
      */
     private void initWheelMotors()    {
         // Define and Initialize Motors (note: need to use reference to actual OpMode).
-        leftFrontWheel  = myOpMode.hardwareMap.get(DcMotor.class, "LFront");
-        rightFrontWheel = myOpMode.hardwareMap.get(DcMotor.class, "RFront");
-        leftRearWheel = myOpMode.hardwareMap.get(DcMotor.class, "LRear");
-        rightRearWheel = myOpMode.hardwareMap.get(DcMotor.class, "RRear");
+        leftFrontWheel  = myOpMode.hardwareMap.get(DcMotor.class, "motor_lf");
+        leftRearWheel = myOpMode.hardwareMap.get(DcMotor.class, "motor_lb");
+        rightFrontWheel = myOpMode.hardwareMap.get(DcMotor.class, "motor_rf");
+        rightRearWheel = myOpMode.hardwareMap.get(DcMotor.class, "motor_rb");
 
         // To drive forward, most robots need the motors on one side to be reversed, because the axles point in opposite directions.
         // Note: The settings here assume direct drive on left and right wheels.  Gear Reduction or 90 Deg drives may require direction flips
@@ -158,13 +158,41 @@ public class RobotWheels {
         double rightFrontVelocity = vectorLength * Math.cos(robotAngle) + rightXscale;
         double leftFrontVelocity = vectorLength * Math.sin(robotAngle) - rightXscale;
         double rightRearVelocity = vectorLength * Math.sin(robotAngle) + rightXscale;
-        final double leftRearVelocity = vectorLength * Math.cos(robotAngle) - rightXscale;
+        double leftRearVelocity = vectorLength * Math.cos(robotAngle) - rightXscale;
 
         // If there are encoders connected, switch to RUN_USING_ENCODER mode for greater accuracy.
         setRunModeForAllWheels(DcMotor.RunMode.RUN_USING_ENCODER);
 
         // Use existing method to drive both wheels.
         setDrivePower(leftFrontVelocity, rightFrontVelocity, leftRearVelocity, rightRearVelocity);
+
+        Telemetry telemetry = myOpMode.telemetry;
+        telemetry.addLine("Calculated Wheel Powers");
+        telemetry.addData("LF Wheel", leftFrontVelocity);
+        telemetry.addData("LR Wheel", leftRearVelocity);
+        telemetry.addData("RF Wheel", rightFrontVelocity);
+        telemetry.addData("RR Wheel", rightRearVelocity);
+        telemetry.addLine();
+        telemetry.addLine("Actual Wheel Powers");
+        telemetry.addData("LF Wheel", leftFrontWheel.getPower());
+        telemetry.addData("LR Wheel", leftRearWheel.getPower());
+        telemetry.addData("RF Wheel", rightFrontWheel.getPower());
+        telemetry.addData("RR Wheel", rightRearWheel.getPower());
+        telemetry.addLine();
+        telemetry.addLine("Actual Wheel Positions");
+        telemetry.addData("LF Wheel", leftFrontWheel.getCurrentPosition());
+        telemetry.addData("LR Wheel", leftRearWheel.getCurrentPosition());
+        telemetry.addData("RF Wheel", rightFrontWheel.getCurrentPosition());
+        telemetry.addData("RR Wheel", rightRearWheel.getCurrentPosition());
+/*
+        telemetry.addLine();
+        telemetry.addData("Brake Mode:", "LF %s, LR %s, RF %s, RR %s",
+                leftFrontWheel.getZeroPowerBehavior().name(),
+                leftRearWheel.getZeroPowerBehavior().name(),
+                rightFrontWheel.getZeroPowerBehavior().name(),
+                rightRearWheel.getZeroPowerBehavior().name());
+*/
+        telemetry.update();
     }
 
     /**

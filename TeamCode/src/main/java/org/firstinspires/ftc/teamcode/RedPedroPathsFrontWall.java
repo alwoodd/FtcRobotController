@@ -1,40 +1,83 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.pedropathing.geometry.BezierCurve;
+import com.pedropathing.geometry.BezierLine;
+import com.pedropathing.geometry.Pose;
+import com.pedropathing.paths.Path;
+import com.pedropathing.paths.PathBuilder;
+
 import com.pedropathing.follower.Follower;
 import com.pedropathing.paths.PathChain;
-import org.firstinspires.ftc.teamcode.teamPedroPathing.AutonomousPedroPaths;
-import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroPathConverter;
 
-public class RedPedroPathsFrontWall implements AutonomousPedroPaths {
-    private final AutonomousPedroPaths bluePedroPaths;
-    private final PedroPathConverter converter;
+import java.util.ArrayList;
+
+public class RedPedroPathsFrontWall implements AutonomousPedroPathsFrontWall {
+    private final Follower follower;
 
     private PathChain pathFromWallToLaunchZone;
-    private PathChain pathFromChamberToSpike;
-    private PathChain pathFromSpikeToNetZone;
+    private PathChain pathFromLaunchZoneToBallPickup;
+    private PathChain pathFromBallPickupToLaunchZone;
+    private final Pose startingPose = new Pose(85.0, 8.5, Math.toRadians(90));
 
-    public RedPedroPathsFrontWall(Follower follower, AutonomousPedroPaths bluePedroPaths) {
-        this.bluePedroPaths = bluePedroPaths;
-        this.converter = new PedroPathConverter(follower);
+    private final Pose goalShootPose = new Pose(108.378, 120.308, Math.toRadians(4));
+    private final Pose ballPickupPose = new Pose(108.7, 84, Math.toRadians(180));
+
+    public RedPedroPathsFrontWall(Follower follower) {
+        this.follower = follower;
         initPaths();
     }
 
     private void initPaths() {
-        this.pathFromWallToLaunchZone = initPathFromWallToLaunchZone();
-        this.pathFromChamberToSpike = initPathFromChamberToSpike();
-        this.pathFromSpikeToNetZone = initPathFromSpikeToNetZone();
+        this.pathFromWallToLaunchZone = buildPathFromWallToLaunchZone();
+        this.pathFromLaunchZoneToBallPickup = buildPathFromLaunchZoneToBallPickup();
+        this.pathFromBallPickupToLaunchZone = buildPathFromBallPickupToLaunchZone();
     }
 
-    private PathChain initPathFromWallToLaunchZone() {
-        return converter.convertBluePathChainToRed(bluePedroPaths.pathFromWallToLaunchZone());
+    @Override
+    public Pose startingPose() {
+        return this.startingPose;
     }
 
-    private PathChain initPathFromChamberToSpike() {
-        return converter.convertBluePathChainToRed((bluePedroPaths.pathFromChamberToSpike()));
+    private PathChain buildPathFromWallToLaunchZone() {
+        PathBuilder builder = follower.pathBuilder();
+        builder
+            .addPath(
+                // Line 1
+                new BezierLine(
+                startingPose,
+                new Pose(85, 95, Math.toRadians(90)))
+                )
+            .setTangentHeadingInterpolation()
+            .addPath(
+                // Line 2
+                new BezierCurve(
+                new Pose(85, 95, Math.toRadians(90)),
+                new Pose(85.3, 116.6),
+                new Pose(108.378, 120.308, Math.toRadians(4))
+                )
+            )
+            .setTangentHeadingInterpolation();
+        return builder.build();
     }
 
-    private PathChain initPathFromSpikeToNetZone() {
-        return converter.convertBluePathChainToRed((bluePedroPaths.pathFromSpikeToNetZone()));
+    private PathChain buildPathFromLaunchZoneToBallPickup() {
+        PathBuilder builder = follower.pathBuilder();
+        builder
+            .addPath(new BezierLine(goalShootPose, ballPickupPose))
+            .setLinearHeadingInterpolation(Math.toRadians(9), Math.toRadians(180));
+
+        return builder.build();
+    }
+
+    private PathChain buildPathFromBallPickupToLaunchZone() {
+        Path thePath = pathFromLaunchZoneToBallPickup.firstPath(); //and only path
+        BezierLine bezierLine = (BezierLine) thePath.getCurve();
+        ArrayList<Pose> controlPoints = bezierLine.getControlPoints();
+        Pose reverseStartPose = controlPoints.get(1);
+        Pose reverseEndPose = controlPoints.get(0);
+        Path reversePath = new Path(new BezierLine(reverseStartPose, reverseEndPose));
+        reversePath.setLinearHeadingInterpolation(reverseStartPose.getHeading(), reverseEndPose.getHeading());
+        return new PathChain(reversePath);
     }
 
     @Override
@@ -43,12 +86,12 @@ public class RedPedroPathsFrontWall implements AutonomousPedroPaths {
     }
 
     @Override
-    public PathChain pathFromChamberToSpike() {
-        return pathFromChamberToSpike;
+    public PathChain pathFromLaunchZoneToBallPickup() {
+        return pathFromLaunchZoneToBallPickup;
     }
 
     @Override
-    public PathChain pathFromSpikeToNetZone() {
-        return pathFromSpikeToNetZone;
+    public PathChain pathFromBallPickupToLaunchZone() {
+        return pathFromBallPickupToLaunchZone;
     }
 }
