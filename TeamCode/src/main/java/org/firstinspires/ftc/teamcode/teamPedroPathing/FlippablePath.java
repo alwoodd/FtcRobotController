@@ -1,0 +1,120 @@
+package org.firstinspires.ftc.teamcode.teamPedroPathing;
+
+import com.pedropathing.geometry.BezierCurve;
+import com.pedropathing.geometry.BezierLine;
+import com.pedropathing.geometry.Curve;
+import com.pedropathing.geometry.Pose;
+import com.pedropathing.math.MathFunctions;
+import com.pedropathing.paths.Path;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+public class FlippablePath extends Path {
+    private final HeadingInterpolationType headingInterpolationType;
+
+    private enum HeadingInterpolationType {
+        TANGENT,
+        CONSTANT,
+        LINEAR
+    }
+
+    public FlippablePath(Curve curve) {
+        super(curve);
+        this.headingInterpolationType = HeadingInterpolationType.TANGENT;
+        this.setTangentHeadingInterpolation();
+    }
+    public FlippablePath(Curve curve, double endHeading) {
+        super(curve);
+        this.headingInterpolationType = HeadingInterpolationType.CONSTANT;
+        this.setConstantHeadingInterpolation(endHeading);
+    }
+    public FlippablePath(Curve curve, double startHeading, double endHeading) {
+        super(curve);
+        this.headingInterpolationType = HeadingInterpolationType.LINEAR;
+        this.setLinearHeadingInterpolation(startHeading, endHeading);
+    }
+
+    public static FlippablePath tangentHeadingPath(Curve curve) {
+        return new FlippablePath(curve);
+    }
+    public static FlippablePath constantHeadingPath(Curve curve, double endHeading) {
+        return new FlippablePath(curve, endHeading);
+    }
+    public static FlippablePath linearHeadingPath(Curve curve, double startHeading, double endHeading) {
+        return new FlippablePath(curve, startHeading, endHeading);
+    }
+
+    public FlippablePath flipRightToLeft() {
+        ArrayList<Pose> newPoses = new ArrayList<>();
+
+        for (Pose oldPose : this.getControlPoints()) {
+            newPoses.add(new Pose(
+                144 - oldPose.getX(),
+                oldPose.getY(),
+                MathFunctions.normalizeAngle(Math.PI - oldPose.getHeading()))
+            );
+        }
+
+        return createFlippablePathFrom(this.headingInterpolationType, createCurveFrom(newPoses));
+    }
+
+    /**
+     * Create a new FlippablePath that has its controlPoint (i.e. its Poses)
+     * in reverse order. Useful for making a FlippablePath that simply reverses
+     * direction.
+     * @return FlippablePath
+     * @apiNote Why not just use Curve.getReversed()? It doesn't reverse the headings as expected.
+     */
+    public FlippablePath reverse() {
+        Curve curve = this.getCurve();
+        List<Pose> controlPoints = curve.getControlPoints();
+        Collections.reverse(controlPoints);
+        return createFlippablePathFrom(this.headingInterpolationType, createCurveFrom(controlPoints));
+    }
+
+    /**
+     * Create a Curve that is either a BezierLine or BezierCurve,
+     * depending on the number of Poses passed.
+     * @param  poses List of Poses from which to create a Curve.
+     * @return Curve
+     */
+    private Curve createCurveFrom(List<Pose> poses) {
+        Curve newCurve;
+
+        if (poses.size() < 3) {
+            //The first of the two Poses is assumed to be the start Pose. The second, the end Pose.
+            newCurve = new BezierLine(poses.get(0), poses.get(1));
+        }
+        else {
+            newCurve = new BezierCurve(poses);
+        }
+
+        return newCurve;
+    }
+
+    /**
+     * Using passed headingInterpolationType, call the expected constructor, and return the instance.
+     * @param headingInterpolationType determines which constructor to call.
+     * @param newCurve the Curve for the new instance, and from which any required headings come from.
+     * @return FlippablePath
+     */
+    private FlippablePath createFlippablePathFrom(HeadingInterpolationType headingInterpolationType, Curve newCurve) {
+        FlippablePath newFlippablePath = null;
+
+        switch (headingInterpolationType) {
+            case TANGENT:
+                newFlippablePath = new FlippablePath(newCurve);
+                break;
+            case CONSTANT:
+                newFlippablePath = new FlippablePath(newCurve, newCurve.getLastControlPoint().getHeading());
+                break;
+            case LINEAR:
+                newFlippablePath = new FlippablePath(newCurve, newCurve.getFirstControlPoint().getHeading(),
+                        newCurve.getLastControlPoint().getHeading());
+        }
+
+        return newFlippablePath;
+    }
+}

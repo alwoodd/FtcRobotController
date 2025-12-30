@@ -1,0 +1,34 @@
+package org.firstinspires.ftc.teamcode.teamPedroPathing;
+
+import com.pedropathing.paths.PathChain;
+import com.pedropathing.paths.Path;
+import com.pedropathing.paths.PathBuilder;
+import com.pedropathing.follower.Follower;
+
+public class PedroPathFlipper {
+    private final Follower follower;
+
+    public PedroPathFlipper(Follower follower) {
+        this.follower = follower;
+    }
+
+    public PathChain flipRightToLeft(PathChain pathChain) {
+        Path currentPath;
+        FlippablePath currentFlippablePath;
+        PathBuilder builder = this.follower.pathBuilder();
+
+        //For each Path in the passed pathChain
+        for (int i = 0; i < pathChain.size(); i++) {
+            currentPath = pathChain.getPath(i);
+
+            if (!(currentPath instanceof FlippablePath)) {
+                throw new UnsupportedOperationException("PathChain must contain instances of FlippablePath.");
+            }
+
+            currentFlippablePath = (FlippablePath) currentPath;
+            builder.addPath(currentFlippablePath.flipRightToLeft());
+        }
+        //return a new PathChain
+        return builder.build();
+    }
+}
