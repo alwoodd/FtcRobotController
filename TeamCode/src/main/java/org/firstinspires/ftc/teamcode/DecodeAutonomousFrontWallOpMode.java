@@ -17,11 +17,11 @@ public class DecodeAutonomousFrontWallOpMode extends LinearOpMode {
         RobotHardware robot = new RobotHardware(this);
         robot.init();
 
-        PedroPathHardware pedroPathHardware = new PedroPathHardware(this);
+        PedroPathConfiguration pedroPathConfiguration = new PedroPathConfiguration(this);
 
-        follower = pedroPathHardware.getFollower();
+        follower = pedroPathConfiguration.getFollower();
 
-        AllianceColor selectedColor = selectRedOrBlue();
+        AllianceColor selectedColor = AllianceColor.INSTANCE.selectRedOrBlue(this);
         AutonomousPedroPathsFrontWall pedroPaths = createPedroPaths(selectedColor);
 
         pedroTelemetry = new PedroPathTelemetry(telemetry, follower, selectedColor);
@@ -41,6 +41,13 @@ public class DecodeAutonomousFrontWallOpMode extends LinearOpMode {
         }
     }
 
+    /**
+     * Depending on the passed selectedColor, instantiate and return either a
+     * RedPedroPathsFrontWall or BluePedroPathsFrontWall.
+     * Both implement the AutonomousPedroPathsFrontWall interface.
+     * @param selectedColor RED or BLUE
+     * @return AutonomousPedroPathsFrontWall
+     */
     private AutonomousPedroPathsFrontWall createPedroPaths(AllianceColor selectedColor) {
         if (selectedColor == AllianceColor.RED) {
             return new RedPedroPathsFrontWall(follower);
@@ -50,36 +57,13 @@ public class DecodeAutonomousFrontWallOpMode extends LinearOpMode {
         }
     }
 
-    private AllianceColor selectRedOrBlue() {
-        AllianceColor selectedColor = AllianceColor.RED;
-
-        while (!isStopRequested()) {
-            telemetry.addLine("Press Left Bumper to toggle between Red and Blue alliance.");
-            telemetry.addLine("Press Right Bumper to confirm selection.");
-            telemetry.addData(selectedColor.toString(), " currently selected");
-            telemetry.update();
-
-            if (gamepad1.leftBumperWasPressed()) {
-                if (selectedColor == AllianceColor.RED) {
-                    selectedColor = AllianceColor.BLUE;
-                }
-                else {
-                    selectedColor = AllianceColor.RED;
-                }
-            }
-            else if (gamepad1.rightBumperWasPressed()) {
-                break;
-            }
-        }
-
-        return selectedColor;
-    }
-
+    //Emulate shooting balls.
     private void shootBalls(){
         pedroTelemetry.pathTelemetry("Shooting balls.");
         sleep(4000);
     }
 
+    //Emulate pickup up balls.
     private void ballPickup(){
         pedroTelemetry.pathTelemetry("Picking up balls.");
         sleep(4000);

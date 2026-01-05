@@ -7,11 +7,23 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
+/**
+ * This class provides a convenient and standard way to tell the Follower which Path to follow,
+ * then call follower.update() until the Path is complete.
+ * The constructor also guarantees that follower.setStartingPose() is called.
+ */
 public class PedroPathFollower {
     private final LinearOpMode opMode;
     private final Follower follower;
     private final PedroPathTelemetry pedroTelemetry;
 
+    /**
+     * Constructor
+     * @param opMode LinearOpMode instance
+     * @param follower Follower instance
+     * @param pedroTelemetry PedroPathTelemetry instance
+     * @param startPose Pose used for call to follower.setStartingPose()
+     */
     public PedroPathFollower(LinearOpMode opMode, Follower follower, PedroPathTelemetry pedroTelemetry, Pose startPose) {
         this.opMode = opMode;
         this.follower = follower;
@@ -25,6 +37,12 @@ public class PedroPathFollower {
         pedroTelemetry.pathTelemetry("Starting Pose");
     }
 
+    /**
+     * Tell follower to follow the passed pathChain,
+     * then actually follow it until the path completes.
+     * @param pathChain pathChain to follow
+     * @param message message to display while path is being followed.
+     */
     public void followPathChain(PathChain pathChain, String message) {
         follower.followPath(pathChain, true);
 
@@ -33,19 +51,4 @@ public class PedroPathFollower {
             follower.update();
         }
     }
-
-/*
-    private void pathTelemetry() {
-        Telemetry telemetry = opMode.telemetry;
-        telemetry.addData("x", follower.getPose().getX());
-        telemetry.addData("y", follower.getPose().getY());
-        telemetry.addData("heading", Math.toDegrees(follower.getPose().getHeading()));
-        telemetry.update();
-    }
-
-    private void pathTelemetry(String message) {
-        opMode.telemetry.addLine(message);
-        pathTelemetry();
-    }
-*/
 }

@@ -15,16 +15,23 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
-public class PedroPathHardware {
+/**
+ * This class provides a single location to set Pedro Path's myriad constraints.
+ * It is responsible for creating and returning a Follower built using these constraints.
+ */
+public class PedroPathConfiguration {
     private final OpMode myOpMode;
 
     private Follower follower;
 
-    public PedroPathHardware(LinearOpMode opMode) {
+    public PedroPathConfiguration(LinearOpMode opMode) {
         this.myOpMode = opMode;
         init();
     }
 
+    /**
+     * Call all the constant builders and build the Follower instance.
+     */
     private void init() {
         MecanumConstants driveConstants = buildMecanumConstants();
 
@@ -39,6 +46,7 @@ public class PedroPathHardware {
          * Irritatingly, this cannot be changed using FollowerConstants.
          * It can only be changed by calling setMaxPower() on the built instance
          * of Follower. Set globalMaxPower to be the the same as that in DriveConstants.
+         * (DriveConstants are set via MecanumConstants.)
          */
         this.follower.setMaxPower(driveConstants.getMaxPower());
     }
