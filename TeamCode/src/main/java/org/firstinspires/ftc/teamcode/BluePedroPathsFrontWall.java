@@ -32,15 +32,15 @@ public class BluePedroPathsFrontWall implements AutonomousPedroPathsFrontWall {
     }
 
     private PathChain buildPathFromWallToLaunchZone() {
-        return pathFlipper.flipRightToLeft(redPedroPaths.pathFromWallToLaunchZone());
+        return pathFlipper.flipPathChainRightToLeft(redPedroPaths.pathFromWallToLaunchZone());
     }
 
     private PathChain buildPathFromLaunchZoneToBallPickup() {
-        return pathFlipper.flipRightToLeft(redPedroPaths.pathFromLaunchZoneToBallPickup());
+        return pathFlipper.flipPathChainRightToLeft(redPedroPaths.pathFromLaunchZoneToBallPickup());
     }
 
     private PathChain buildPathFromBallPickupToLaunchZone() {
-        return pathFlipper.flipRightToLeft(redPedroPaths.pathFromBallPickupToLaunchZone());
+        return pathFlipper.flipPathChainRightToLeft(redPedroPaths.pathFromBallPickupToLaunchZone());
     }
 
     @Override

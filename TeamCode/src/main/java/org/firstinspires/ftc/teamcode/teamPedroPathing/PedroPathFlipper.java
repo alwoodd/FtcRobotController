@@ -5,6 +5,7 @@ import com.pedropathing.paths.Path;
 import com.pedropathing.paths.PathBuilder;
 import com.pedropathing.follower.Follower;
 
+
 public class PedroPathFlipper {
     private final Follower follower;
 
@@ -12,7 +13,14 @@ public class PedroPathFlipper {
         this.follower = follower;
     }
 
-    public PathChain flipRightToLeft(PathChain pathChain) {
+    /**
+     * Take a PathChain containing FlippablePaths, calls FlippablePath.flipRightToLeft() on each one,
+     * then returns a new PathChain of FlippablePaths.
+     * @param pathChain PathChain containing FlippablePaths
+     * @return PathChain of FlippablePaths
+     * @throws UnsupportedOperationException if any Path is not a FlippablePath.
+     */
+    public PathChain flipPathChainRightToLeft(PathChain pathChain) {
         Path currentPath;
         FlippablePath currentFlippablePath;
         PathBuilder builder = this.follower.pathBuilder();

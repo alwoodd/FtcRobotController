@@ -11,6 +11,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * A FlippablePath extends Paths with the ability to flipRightToLeft, and to reverse.
+ */
 public class FlippablePath extends Path {
     private final HeadingInterpolationType headingInterpolationType;
 
@@ -20,32 +23,70 @@ public class FlippablePath extends Path {
         LINEAR
     }
 
+    /**
+     * Instantiate a FlippablePath and set it to TangentHeadingInterpolation.
+     * @param curve Curve which is either a BezierLine or BezierCurve.
+     */
     public FlippablePath(Curve curve) {
         super(curve);
         this.headingInterpolationType = HeadingInterpolationType.TANGENT;
         this.setTangentHeadingInterpolation();
     }
+    /**
+     * Instantiate a FlippablePath and set it to ConstantHeadingInterpolation.
+     * @param curve Curve which is either a BezierLine or BezierCurve.
+     * @param endHeading The interpolation's heading.
+     */
     public FlippablePath(Curve curve, double endHeading) {
         super(curve);
         this.headingInterpolationType = HeadingInterpolationType.CONSTANT;
         this.setConstantHeadingInterpolation(endHeading);
     }
+
+    /**
+     * Instantiate a FlippablePath and set it to LinearHeadingInterpolation.
+     * @param curve Curve which is either a BezierLine or BezierCurve.
+     * @param startHeading The interpolation's start heading.
+     * @param endHeading The interpolation's end heading.
+     */
     public FlippablePath(Curve curve, double startHeading, double endHeading) {
         super(curve);
         this.headingInterpolationType = HeadingInterpolationType.LINEAR;
         this.setLinearHeadingInterpolation(startHeading, endHeading);
     }
 
+    /**
+     * Convenience method that explicitly creates a FlippablePath with TangentHeadingInterpolation.
+     * @param curve Curve which is either a BezierLine or BezierCurve.
+     * @return FlippablePath
+     */
     public static FlippablePath tangentHeadingPath(Curve curve) {
         return new FlippablePath(curve);
     }
+    /**
+     * Convenience method that explicitly creates a FlippablePath with ConstantHeadingInterpolation.
+     * @param curve Curve which is either a BezierLine or BezierCurve.
+     * @param endHeading The interpolation's heading.
+     * @return FlippablePath
+     */
     public static FlippablePath constantHeadingPath(Curve curve, double endHeading) {
         return new FlippablePath(curve, endHeading);
     }
+    /**
+     * Convenience method that explicitly creates a FlippablePath with LinearHeadingInterpolation.
+     * @param curve Curve which is either a BezierLine or BezierCurve.
+     * @param startHeading The interpolation's start heading.
+     * @param endHeading The interpolation's end heading.
+     * @return FlippablePath
+     */
     public static FlippablePath linearHeadingPath(Curve curve, double startHeading, double endHeading) {
         return new FlippablePath(curve, startHeading, endHeading);
     }
 
+    /**
+     * Create a new FlippablePath that is flipped from Right to Left.
+     * @return FlippablePath
+     */
     public FlippablePath flipRightToLeft() {
         ArrayList<Pose> newPoses = new ArrayList<>();
 
@@ -61,7 +102,7 @@ public class FlippablePath extends Path {
     }
 
     /**
-     * Create a new FlippablePath that has its controlPoint (i.e. its Poses)
+     * Create a new FlippablePath that has its controlPoints (that is, its Poses)
      * in reverse order. Useful for making a FlippablePath that simply reverses
      * direction.
      * @return FlippablePath
