@@ -13,6 +13,7 @@ import java.util.List;
 
 /**
  * A FlippablePath extends Paths with the ability to flipRightToLeft, and to reverse.
+ * WARNING: Does not support flipping Paths that have called reverseHeadingInterpolation().
  */
 public class FlippablePath extends Path {
     private final HeadingInterpolationType headingInterpolationType;
@@ -22,6 +23,8 @@ public class FlippablePath extends Path {
         CONSTANT,
         LINEAR
     }
+
+    private boolean isReversed = false;
 
     /**
      * Instantiate a FlippablePath and set it to TangentHeadingInterpolation.
@@ -112,7 +115,9 @@ public class FlippablePath extends Path {
         Curve curve = this.getCurve();
         List<Pose> controlPoints = curve.getControlPoints();
         Collections.reverse(controlPoints);
-        return createFlippablePathFrom(this.headingInterpolationType, createCurveFrom(controlPoints));
+        FlippablePath fPath = createFlippablePathFrom(this.headingInterpolationType, createCurveFrom(controlPoints));
+        this.isReversed = !this.isReversed;
+        return fPath;
     }
 
     /**
@@ -149,7 +154,9 @@ public class FlippablePath extends Path {
                 newFlippablePath = new FlippablePath(newCurve);
                 break;
             case CONSTANT:
-                newFlippablePath = new FlippablePath(newCurve, newCurve.getLastControlPoint().getHeading());
+                double heading = (isReversed) ? newCurve.getFirstControlPoint().getHeading() :
+                        newCurve.getLastControlPoint().getHeading();
+                newFlippablePath = new FlippablePath(newCurve, heading);
                 break;
             case LINEAR:
                 newFlippablePath = new FlippablePath(newCurve, newCurve.getFirstControlPoint().getHeading(),

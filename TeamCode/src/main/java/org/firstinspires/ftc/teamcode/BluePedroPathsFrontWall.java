@@ -11,8 +11,11 @@ public class BluePedroPathsFrontWall implements AutonomousPedroPathsFrontWall {
     private final PedroPathFlipper pathFlipper;
 
     private PathChain pathFromWallToLaunchZone;
-    private PathChain pathFromLaunchZoneToBallPickup;
-    private PathChain pathFromBallPickupToLaunchZone;
+    private PathChain pathFromLaunchZoneToStartBallPickup;
+    private PathChain pathFromStartBallPickupToEndBallPickup;
+    private PathChain pathFromEndBallPickupToLaunchZone;
+    //private PathChain pathFromStartBallPickupToLaunchZone;
+    private PathChain pathFromLaunchZoneToPark;
 
     public BluePedroPathsFrontWall(Follower follower, AutonomousPedroPathsFrontWall redPedroPaths) {
         this.redPedroPaths = redPedroPaths;
@@ -22,8 +25,11 @@ public class BluePedroPathsFrontWall implements AutonomousPedroPathsFrontWall {
 
     private void initPaths() {
         this.pathFromWallToLaunchZone = buildPathFromWallToLaunchZone();
-        this.pathFromLaunchZoneToBallPickup = buildPathFromLaunchZoneToBallPickup();
-        this.pathFromBallPickupToLaunchZone = buildPathFromBallPickupToLaunchZone();
+        this.pathFromLaunchZoneToStartBallPickup = buildPathFromLaunchZoneToStartBallPickup();
+        this.pathFromStartBallPickupToEndBallPickup = buildPathFromStartToEndBallPickup();
+        this.pathFromEndBallPickupToLaunchZone = buildPathFromEndPickupToLaunchZone();
+        //this.pathFromStartBallPickupToLaunchZone = buildPathFromStartBallPickupToLaunchZone();
+        this.pathFromLaunchZoneToPark = buildPathFromLaunchZoneToPark();
     }
 
     @Override
@@ -35,12 +41,20 @@ public class BluePedroPathsFrontWall implements AutonomousPedroPathsFrontWall {
         return pathFlipper.flipPathChainRightToLeft(redPedroPaths.pathFromWallToLaunchZone());
     }
 
-    private PathChain buildPathFromLaunchZoneToBallPickup() {
-        return pathFlipper.flipPathChainRightToLeft(redPedroPaths.pathFromLaunchZoneToBallPickup());
+    private PathChain buildPathFromLaunchZoneToStartBallPickup() {
+        return pathFlipper.flipPathChainRightToLeft(redPedroPaths.pathFromLaunchZoneToStartBallPickup());
     }
 
-    private PathChain buildPathFromBallPickupToLaunchZone() {
-        return pathFlipper.flipPathChainRightToLeft(redPedroPaths.pathFromBallPickupToLaunchZone());
+    private PathChain buildPathFromStartToEndBallPickup() {
+        return pathFlipper.flipPathChainRightToLeft(redPedroPaths.pathFromStartBallPickupToEndBallPickup());
+    }
+
+    private PathChain buildPathFromEndPickupToLaunchZone() {
+        return pathFlipper.flipPathChainRightToLeft(redPedroPaths.pathFromEndBallPickupToLaunchZone());
+    }
+
+    private PathChain buildPathFromLaunchZoneToPark() {
+        return pathFlipper.flipPathChainRightToLeft(redPedroPaths.pathFromLaunchZoneToPark());
     }
 
     @Override
@@ -49,12 +63,29 @@ public class BluePedroPathsFrontWall implements AutonomousPedroPathsFrontWall {
     }
 
     @Override
-    public PathChain pathFromLaunchZoneToBallPickup() {
-        return pathFromLaunchZoneToBallPickup;
+    public PathChain pathFromLaunchZoneToStartBallPickup() {
+        return pathFromLaunchZoneToStartBallPickup;
     }
 
     @Override
-    public PathChain pathFromBallPickupToLaunchZone() {
-        return pathFromBallPickupToLaunchZone;
+    public PathChain pathFromStartBallPickupToEndBallPickup() {
+        return pathFromStartBallPickupToEndBallPickup;
+    }
+
+    @Override
+    public PathChain pathFromEndBallPickupToLaunchZone() {
+        return pathFromEndBallPickupToLaunchZone;
+    }
+
+/*
+    @Override
+    public PathChain pathFromStartBallPickupToLaunchZone() {
+        return pathFromStartBallPickupToLaunchZone;
+    }
+*/
+
+    @Override
+    public PathChain pathFromLaunchZoneToPark() {
+        return pathFromLaunchZoneToPark;
     }
 }

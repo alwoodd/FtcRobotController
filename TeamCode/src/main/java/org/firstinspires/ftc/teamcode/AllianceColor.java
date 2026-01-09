@@ -10,34 +10,21 @@ public enum AllianceColor {
     INSTANCE;
 
     /**
-     * Standard way to choose an AllianceColor via a Driver Hub.
-     * @param opMode LinearOpMode of the caller.
+     * Standard way to toggle the current color.
+     * @param buttonPressed button result passed by the caller
+     * @param currentColor what the caller considers the current color
      * @return AllianceColor RED or BLUE
      */
-    public AllianceColor selectRedOrBlue(LinearOpMode opMode) {
-        Telemetry telemetry = opMode.telemetry;
-        Gamepad gamepad = opMode.gamepad1;
-        AllianceColor selectedColor = AllianceColor.RED;
-
-        while (!opMode.isStopRequested()) {
-            telemetry.addLine("Press Left Bumper to toggle between Red and Blue alliance.");
-            telemetry.addLine("Press Right Bumper to confirm selection.");
-            telemetry.addData(selectedColor.toString(), " currently selected");
-            telemetry.update();
-
-            if (gamepad.leftBumperWasPressed()) {
-                if (selectedColor == AllianceColor.RED) {
-                    selectedColor = AllianceColor.BLUE;
-                }
-                else {
-                    selectedColor = AllianceColor.RED;
-                }
+    public AllianceColor toggleColor(boolean buttonPressed, AllianceColor currentColor) {
+        if (buttonPressed) {
+            if (currentColor == AllianceColor.RED) {
+                currentColor = AllianceColor.BLUE;
             }
-            else if (gamepad.rightBumperWasPressed()) {
-                break;
+            else {
+                currentColor = AllianceColor.RED;
             }
         }
 
-        return selectedColor;
+        return currentColor;
     }
 }

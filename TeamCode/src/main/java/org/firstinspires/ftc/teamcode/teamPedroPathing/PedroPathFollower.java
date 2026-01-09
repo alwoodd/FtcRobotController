@@ -39,13 +39,32 @@ public class PedroPathFollower {
 
     /**
      * Tell follower to follow the passed pathChain,
-     * then actually follow it until the path completes.
+     * then call goPath().
      * @param pathChain pathChain to follow
      * @param message message to display while path is being followed.
      */
     public void followPathChain(PathChain pathChain, String message) {
         follower.followPath(pathChain, true);
+        goPath(message);
+    }
 
+    /**
+     * Tell follower to follow the passed pathChain, at the passed maxPower,
+     * then call goPath().
+     * @param pathChain pathChain to follow
+     * @param maxPower maxPower for followPath()
+     * @param message message to display while path is being followed.
+     */
+    public void followPathChain(PathChain pathChain, double maxPower, String message) {
+        follower.followPath(pathChain, maxPower, true);
+        goPath(message);
+    }
+
+    /**
+     * Call follower.update() until the path completes.
+     * @param message message to display while path is being followed.
+     */
+    private void goPath(String message) {
         while (opMode.opModeIsActive() && follower.isBusy()){
             pedroTelemetry.pathTelemetry(message);
             follower.update();
