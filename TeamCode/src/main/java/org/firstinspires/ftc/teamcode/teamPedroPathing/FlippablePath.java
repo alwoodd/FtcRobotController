@@ -87,10 +87,10 @@ public class FlippablePath extends Path {
     }
 
     /**
-     * Create a new FlippablePath that is flipped from Right to Left.
+     * Create a new FlippablePath that is flipped Right to Left, or Left to Right.
      * @return FlippablePath
      */
-    public FlippablePath flipRightToLeft() {
+    public FlippablePath flipPath() {
         ArrayList<Pose> newPoses = new ArrayList<>();
 
         for (Pose oldPose : this.getControlPoints()) {

@@ -69,17 +69,23 @@ public class RobotWheels {
      */
     private void initWheelMotors()    {
         // Define and Initialize Motors (note: need to use reference to actual OpMode).
-        leftFrontWheel  = myOpMode.hardwareMap.get(DcMotor.class, "motor_lf");
-        leftRearWheel = myOpMode.hardwareMap.get(DcMotor.class, "motor_lb");
-        rightFrontWheel = myOpMode.hardwareMap.get(DcMotor.class, "motor_rf");
-        rightRearWheel = myOpMode.hardwareMap.get(DcMotor.class, "motor_rb");
+        leftFrontWheel  = myOpMode.hardwareMap.get(DcMotor.class, "leftFront");
+        leftRearWheel = myOpMode.hardwareMap.get(DcMotor.class, "leftRear");
+        rightFrontWheel = myOpMode.hardwareMap.get(DcMotor.class, "rightFront");
+        rightRearWheel = myOpMode.hardwareMap.get(DcMotor.class, "rightRear");
+/*
+        leftFrontWheel  = myOpMode.hardwareMap.get(DcMotor.class, "LeftFront");
+        leftRearWheel = myOpMode.hardwareMap.get(DcMotor.class, "LeftBack");
+        rightFrontWheel = myOpMode.hardwareMap.get(DcMotor.class, "FrontRight");
+        rightRearWheel = myOpMode.hardwareMap.get(DcMotor.class, "BackRight");
+*/
 
         // To drive forward, most robots need the motors on one side to be reversed, because the axles point in opposite directions.
         // Note: The settings here assume direct drive on left and right wheels.  Gear Reduction or 90 Deg drives may require direction flips
-        leftFrontWheel.setDirection(DcMotor.Direction.FORWARD);
-        leftRearWheel.setDirection(DcMotor.Direction.FORWARD);
-        rightFrontWheel.setDirection(DcMotor.Direction.REVERSE);
-        rightRearWheel.setDirection(DcMotor.Direction.REVERSE);
+        leftFrontWheel.setDirection(DcMotor.Direction.REVERSE);
+        leftRearWheel.setDirection(DcMotor.Direction.REVERSE);
+        rightFrontWheel.setDirection(DcMotor.Direction.FORWARD);
+        rightRearWheel.setDirection(DcMotor.Direction.FORWARD);
 
         // Set wheel motors to not resist turning when motor is stopped.
         leftFrontWheel.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
@@ -167,12 +173,14 @@ public class RobotWheels {
         setDrivePower(leftFrontVelocity, rightFrontVelocity, leftRearVelocity, rightRearVelocity);
 
         Telemetry telemetry = myOpMode.telemetry;
+/*
         telemetry.addLine("Calculated Wheel Powers");
         telemetry.addData("LF Wheel", leftFrontVelocity);
         telemetry.addData("LR Wheel", leftRearVelocity);
         telemetry.addData("RF Wheel", rightFrontVelocity);
         telemetry.addData("RR Wheel", rightRearVelocity);
         telemetry.addLine();
+*/
         telemetry.addLine("Actual Wheel Powers");
         telemetry.addData("LF Wheel", leftFrontWheel.getPower());
         telemetry.addData("LR Wheel", leftRearWheel.getPower());
@@ -184,6 +192,12 @@ public class RobotWheels {
         telemetry.addData("LR Wheel", leftRearWheel.getCurrentPosition());
         telemetry.addData("RF Wheel", rightFrontWheel.getCurrentPosition());
         telemetry.addData("RR Wheel", rightRearWheel.getCurrentPosition());
+        telemetry.addLine();
+        telemetry.addLine("Wheel directions");
+        telemetry.addData("LF Wheel", leftFrontWheel.getDirection());
+        telemetry.addData("LR Wheel", leftRearWheel.getDirection());
+        telemetry.addData("RF Wheel", rightFrontWheel.getDirection());
+        telemetry.addData("RR Wheel", rightRearWheel.getDirection());
 /*
         telemetry.addLine();
         telemetry.addData("Brake Mode:", "LF %s, LR %s, RF %s, RR %s",

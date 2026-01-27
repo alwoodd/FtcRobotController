@@ -20,7 +20,7 @@ public class PedroPathFlipper {
      * @return PathChain of FlippablePaths
      * @throws UnsupportedOperationException if any Path is not a FlippablePath.
      */
-    public PathChain flipPathChainRightToLeft(PathChain pathChain) {
+    public PathChain flipPathChain(PathChain pathChain) {
         Path currentPath;
         FlippablePath currentFlippablePath;
         PathBuilder builder = this.follower.pathBuilder();
@@ -34,7 +34,7 @@ public class PedroPathFlipper {
             }
 
             currentFlippablePath = (FlippablePath) currentPath;
-            builder.addPath(currentFlippablePath.flipRightToLeft());
+            builder.addPath(currentFlippablePath.flipPath());
         }
         //return a new PathChain
         return builder.build();

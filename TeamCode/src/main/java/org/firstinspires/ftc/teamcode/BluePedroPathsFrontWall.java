@@ -38,23 +38,23 @@ public class BluePedroPathsFrontWall implements AutonomousPedroPathsFrontWall {
     }
 
     private PathChain buildPathFromWallToLaunchZone() {
-        return pathFlipper.flipPathChainRightToLeft(redPedroPaths.pathFromWallToLaunchZone());
+        return pathFlipper.flipPathChain(redPedroPaths.pathFromWallToLaunchZone());
     }
 
     private PathChain buildPathFromLaunchZoneToStartBallPickup() {
-        return pathFlipper.flipPathChainRightToLeft(redPedroPaths.pathFromLaunchZoneToStartBallPickup());
+        return pathFlipper.flipPathChain(redPedroPaths.pathFromLaunchZoneToStartBallPickup());
     }
 
     private PathChain buildPathFromStartToEndBallPickup() {
-        return pathFlipper.flipPathChainRightToLeft(redPedroPaths.pathFromStartBallPickupToEndBallPickup());
+        return pathFlipper.flipPathChain(redPedroPaths.pathFromStartBallPickupToEndBallPickup());
     }
 
     private PathChain buildPathFromEndPickupToLaunchZone() {
-        return pathFlipper.flipPathChainRightToLeft(redPedroPaths.pathFromEndBallPickupToLaunchZone());
+        return pathFlipper.flipPathChain(redPedroPaths.pathFromEndBallPickupToLaunchZone());
     }
 
     private PathChain buildPathFromLaunchZoneToPark() {
-        return pathFlipper.flipPathChainRightToLeft(redPedroPaths.pathFromLaunchZoneToPark());
+        return pathFlipper.flipPathChain(redPedroPaths.pathFromLaunchZoneToPark());
     }
 
     @Override
