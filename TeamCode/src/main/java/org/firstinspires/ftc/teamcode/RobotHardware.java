@@ -34,6 +34,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.ImuOrientationOnRobot;
@@ -45,6 +46,8 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.vision.VisionPortal;
+
+import java.util.HashMap;
 
 /**
  * Instead of each Op Mode class redefining the robot's hardware resources within its implementation,
@@ -60,8 +63,8 @@ public class RobotHardware {
     private final LinearOpMode myOpMode;   // gain access to methods in the calling OpMode.
 
     // Define all the HardwareDevices (Motors, Servos, etc.). Make them private so they can't be accessed externally.
-    private DcMotor leftArm;
-    private DcMotor rightArm;
+    private DcMotorEx leftArm;
+    private DcMotorEx rightArm;
     private WebcamName webCam;
     private Servo   leftHand;
     private Servo   rightHand;
@@ -71,6 +74,8 @@ public class RobotHardware {
     private ColorSensor colorSensor;
     private AnalogInput potentiometer;
     private IMU imu;
+    private DcMotorEx leftSpinnyMotor;
+    private DcMotorEx rightSpinnyMotor;
 
     // Hardware device constants.  Make them public so they can be used by the calling OpMode, if needed.
     static final double COUNTS_PER_MOTOR_REV = 560;     // Assumes 20:1 gear reduction
@@ -108,12 +113,13 @@ public class RobotHardware {
      */
     public RobotHardware(LinearOpMode opmode) {
         myOpMode = opmode;
+        init();
     }
 
     /**
      * Call init() to initialize all the robot's hardware.
      */
-    public void init() {
+    private void init() {
 /*
         initServos();
         initDistanceSensors();
@@ -166,8 +172,8 @@ public class RobotHardware {
     }
 
     private void initArmMotors() {
-        leftArm = myOpMode.hardwareMap.get(DcMotor.class, "leftArm");
-        rightArm = myOpMode.hardwareMap.get(DcMotor.class, "rightArm");
+        leftArm = myOpMode.hardwareMap.get(DcMotorEx.class, "leftArm");
+        rightArm = myOpMode.hardwareMap.get(DcMotorEx.class, "rightArm");
     }
 
     private void initIMU() {
@@ -535,6 +541,41 @@ public class RobotHardware {
         }
 
         myOpMode.telemetry.setAutoClear(true);
+    }
+
+    public void startShooterMotors(double power) {
+        leftSpinnyMotor.setPower(power);
+        rightSpinnyMotor.setPower(power);
+    }
+
+    public void stopShooterMotors() {
+        leftSpinnyMotor.setPower(0);
+        rightSpinnyMotor.setPower(0);
+    }
+
+    public void setShooterMotorVelocities(double velocity) {
+        leftSpinnyMotor.setVelocity(velocity, AngleUnit.DEGREES);
+        rightSpinnyMotor.setVelocity(velocity, AngleUnit.DEGREES);
+    }
+
+    public SpinnerVelocities getSpinnerVelocities() {
+        return new SpinnerVelocities(
+                leftSpinnyMotor.getVelocity(AngleUnit.DEGREES),
+                rightSpinnyMotor.getVelocity(AngleUnit.DEGREES)
+        );
+    }
+
+    public static class SpinnerVelocities {
+        public double left;
+        public double right;
+        public SpinnerVelocities(double leftVel, double rightVel) {
+            this.left = leftVel;
+            this.right = rightVel;
+        }
+    }
+
+    public void startBallPickup() {
+
     }
 
     /**

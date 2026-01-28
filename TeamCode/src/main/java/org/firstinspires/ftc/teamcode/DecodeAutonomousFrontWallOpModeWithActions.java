@@ -4,21 +4,26 @@ import com.pedropathing.follower.Follower;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
-import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroPathFollower;
 import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroPathTelemetry;
 
+import java.util.HashMap;
+
 @Autonomous(name = "Start from front wall")
-public class DecodeAutonomousFrontWallOpMode extends LinearOpMode {
+public class DecodeAutonomousFrontWallOpModeWithActions extends LinearOpMode {
     private PedroPathTelemetry pedroTelemetry;
     private Follower follower;
     private final double ballPickupPower = .2;
     private double currentMaxPower, defaultMaxPower;
     private final double maxMaxPower = 1;
     private AllianceColor selectedColor = AllianceColor.RED;
+    private int pathState = 0;
+    private RobotHardware robot;
+    private AutonomousPedroPathsFrontWall pedroPaths;
+    private String pedroMessage = "NO MESSAGE";
 
     @Override
     public void runOpMode() throws InterruptedException {
-        RobotHardware robot = new RobotHardware(this);
+        robot = new RobotHardware(this);
 
         PedroPathConfiguration pedroPathConfiguration = new PedroPathConfiguration(this);
 
@@ -29,21 +34,64 @@ public class DecodeAutonomousFrontWallOpMode extends LinearOpMode {
         initSetup();
         follower.setMaxPower(currentMaxPower);
 
-        AutonomousPedroPathsFrontWall pedroPaths = createPedroPaths(selectedColor);
+        pedroPaths = createPedroPaths(selectedColor);
         pedroTelemetry = new PedroPathTelemetry(telemetry, follower, selectedColor);
-        PedroPathFollower pedroPathFollower = new PedroPathFollower(this, follower, pedroTelemetry, pedroPaths.startingPose());
+
+        follower.setStartingPose(pedroPaths.startingPose());
 
         waitForStart();
 
-        if (opModeIsActive()) {
-            pedroPathFollower.followPathChain(pedroPaths.pathFromWallToLaunchZone(), "Going from wall to launch zone");
-            shootBalls();
-            pedroPathFollower.followPathChain(pedroPaths.pathFromLaunchZoneToStartBallPickup(), "Going from launch zone to ball pickup");
-            ballPickup();
-            pedroPathFollower.followPathChain(pedroPaths.pathFromStartBallPickupToEndBallPickup(), ballPickupPower, "Picking up balls");
-            pedroPathFollower.followPathChain(pedroPaths.pathFromEndBallPickupToLaunchZone(), "Going from ball pickup to launch zone");
-            shootBalls();
-            pedroPathFollower.followPathChain(pedroPaths.pathFromLaunchZoneToPark(), "Parking");
+        while (opModeIsActive() && !isStopRequested()) {
+            follower.update();
+            performActions();
+            pedroTelemetry.pathTelemetry(pedroMessage);
+            telemetry.addLine();
+            RobotHardware.SpinnerVelocities spinnerVelocities = robot.getSpinnerVelocities();
+            telemetry.addData("Left Spinner Velocity", spinnerVelocities.left);
+            telemetry.addData("Right Spinner Velocity", spinnerVelocities.right);
+            telemetry.setAutoClear(false); //Add above telemetry to pedroTelemetry.
+            telemetry.update();
+            telemetry.setAutoClear(true);
+        }
+    }
+
+    private void performActions() {
+        switch (pathState) {
+            case 0:
+                if (!follower.isBusy()) {
+                    pedroMessage = "Going from wall to launch zone";
+                    follower.followPath(pedroPaths.pathFromWallToLaunchZone(), true);
+                    pathState++;
+                }
+                break;
+            case 1:
+                if (!follower.isBusy()) {
+                    robot.startShooterMotors(1);
+                    pedroMessage = "Going from launch zone to ball pickup";
+                    follower.followPath(pedroPaths.pathFromStartBallPickupToEndBallPickup(), true);
+                    pathState++;
+                }
+                break;
+            case 2:
+                if (!follower.isBusy()) {
+                    robot.startBallPickup();
+                    pedroMessage = "Picking up balls";
+                    follower.followPath(pedroPaths.pathFromStartBallPickupToEndBallPickup(), ballPickupPower, true);
+                    pathState++;
+                }
+            case 3:
+                if (!follower.isBusy()) {
+                    pedroMessage = "Going from ball pickup to launch zone";
+                    follower.followPath(pedroPaths.pathFromEndBallPickupToLaunchZone(), ballPickupPower, true);
+                    pathState++;
+                }
+            case 4:
+                if (!follower.isBusy()) {
+                    robot.startShooterMotors(1);
+                    pedroMessage = "Parking";
+                    follower.followPath(pedroPaths.pathFromLaunchZoneToPark(), true);
+                    pathState++;
+                }
         }
     }
 
@@ -61,18 +109,6 @@ public class DecodeAutonomousFrontWallOpMode extends LinearOpMode {
         else {
             return new BluePedroPathsFrontWall(follower, new RedPedroPathsFrontWall(follower));
         }
-    }
-
-    //Emulate shooting balls.
-    private void shootBalls(){
-        pedroTelemetry.pathTelemetry("Shooting balls.");
-        sleep(4000);
-    }
-
-    //Emulate pickup up balls.
-    private void ballPickup(){
-        pedroTelemetry.pathTelemetry("Ball scooper turned on.");
-        sleep(2000);
     }
 
     /**
