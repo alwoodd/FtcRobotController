@@ -1,1 +1,1 @@
-packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"org.firstinspires.ftc.teamcode"}];updateSearchResults();
+packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"org.firstinspires.ftc.teamcode"},{"l":"org.firstinspires.ftc.teamcode.teamPedroPathing"}];updateSearchResults();
