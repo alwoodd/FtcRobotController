@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode;
 import com.pedropathing.geometry.BezierCurve;
 import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
+import com.pedropathing.paths.Path;
 import com.pedropathing.paths.PathBuilder;
 
 import com.pedropathing.follower.Follower;
@@ -10,20 +11,38 @@ import com.pedropathing.paths.PathChain;
 
 import org.firstinspires.ftc.teamcode.teamPedroPathing.FlippablePath;
 
-public class RedPedroPathsFrontWall implements AutonomousPedroPathsFrontWall {
+public class RedPedroPathsFrontWall implements AutonomousPathsFrontWall {
     private final Follower follower;
-
-    private PathChain pathFromWallToLaunchZone;
-    private PathChain pathFromLaunchZoneToStartBallPickup;
-    private PathChain pathFromStartBallPickupToEndBallPickup;
-    private PathChain pathFromEndBallPickupToLaunchZone;
-    //private PathChain pathFromStartBallPickupToLaunchZone;
-    private PathChain pathFromLaunchZoneToPark;
 
     private final Pose startingPose = new Pose(85.0, 8.5, Math.toRadians(90));
     private final Pose goalShootPose = new Pose(108.4, 120.3, Math.toRadians(28));
-    private final Pose startBallPickupPose = new Pose(108.7, 83.5, Math.toRadians(180));
-    private final Pose endBallPickupPose = new Pose(119.9, 83.5, Math.toRadians(0));
+
+    private final Pose startAudienceBallPickupPose = new Pose(108.7, 35.5, Math.toRadians(180));
+    private final Pose endAudienceBallPickupPose = new Pose(119.9, 35.5, Math.toRadians(180));
+
+    private final Pose startMiddleBallPickupPose = new Pose(108.7, 59.7, Math.toRadians(180));
+    private final Pose endMiddleBallPickupPose = new Pose(119.9, 59.7, Math.toRadians(180));
+
+    private final Pose startGoalBallPickupPose = new Pose(108.7, 83.5, Math.toRadians(180));
+    private final Pose endGoalBallPickupPose = new Pose(119.9, 83.5, Math.toRadians(180));
+
+    private PathChain pathFromWallToLaunchZone;
+
+    private PathChain pathFromLaunchZoneToAudienceSideBallPickup;
+    private PathChain pathFromLaunchZoneToMiddleSideBallPickup;
+    private PathChain pathFromLaunchZoneToGoalSideBallPickup;
+
+    private PathChain pathFromAudienceSideBallPickupToEndBallPickup;
+    private PathChain pathFromMiddleSideBallPickupToEndBallPickup;
+    private PathChain pathFromGoalSideBallPickupToEndBallPickup;
+
+    private PathChain pathFromAudienceSideEndBallPickupToLaunchZone;
+    private PathChain pathFromMiddleSideEndBallPickupToLaunchZone;
+    private PathChain pathFromGoalSideEndBallPickupToLaunchZone;
+
+    private PathChain pathFromLaunchZoneToAudienceSideLeave;
+    private PathChain pathFromLaunchZoneToMiddleSideLeave;
+    private PathChain pathFromLaunchZoneToGoalSideLeave;
 
     public RedPedroPathsFrontWall(Follower follower) {
         this.follower = follower;
@@ -32,16 +51,22 @@ public class RedPedroPathsFrontWall implements AutonomousPedroPathsFrontWall {
 
     private void initPaths() {
         this.pathFromWallToLaunchZone = buildPathFromWallToLaunchZone();
-        this.pathFromLaunchZoneToStartBallPickup = buildPathFromLaunchZoneToStartBallPickup();
-        this.pathFromStartBallPickupToEndBallPickup = buildPathFromStartToEndBallPickup();
-        this.pathFromEndBallPickupToLaunchZone = buildPathFromEndPickupToLaunchZone();
-        //this.pathFromStartBallPickupToLaunchZone = buildPathFromStartBallPickupToLaunchZone();
-        this.pathFromLaunchZoneToPark = buildPathFromLaunchZoneToPark();
-    }
 
-    @Override
-    public Pose startingPose() {
-        return this.startingPose;
+        this.pathFromLaunchZoneToAudienceSideBallPickup = buildPathFromLaunchZoneToAudienceSideBallPickup();
+        this.pathFromLaunchZoneToMiddleSideBallPickup = buildPathFromLaunchZoneToMiddleSideBallPickup();
+        this.pathFromLaunchZoneToGoalSideBallPickup = buildPathFromLaunchZoneToGoalSideBallPickup();
+
+        this.pathFromAudienceSideBallPickupToEndBallPickup = buildPathFromAudienceSideBallPickupToEndBallPickup();
+        this.pathFromMiddleSideBallPickupToEndBallPickup = buildPathFromMiddleSideBallPickupToEndBallPickup();
+        this.pathFromGoalSideBallPickupToEndBallPickup = buildPathFromGoalSideBallPickupToEndBallPickup();
+
+        this.pathFromAudienceSideEndBallPickupToLaunchZone = buildpathFromAudienceSideEndBallPickupToLaunchZone();
+        this.pathFromMiddleSideEndBallPickupToLaunchZone = buildpathFromMiddleSideEndBallPickupToLaunchZone();
+        this.pathFromGoalSideEndBallPickupToLaunchZone = buildPathFromGoalSideEndPickupToLaunchZone();
+
+        this.pathFromLaunchZoneToAudienceSideLeave = buildPathFromLaunchZoneToAudienceSideLeave();
+        this.pathFromLaunchZoneToMiddleSideLeave = buildPathFromLaunchZoneToMiddleSideLeave();
+        this.pathFromLaunchZoneToGoalSideLeave = buildPathFromLaunchZoneToGoalSideLeave();
     }
 
     private PathChain buildPathFromWallToLaunchZone() {
@@ -68,28 +93,87 @@ public class RedPedroPathsFrontWall implements AutonomousPedroPathsFrontWall {
         return builder.build();
     }
 
-    private PathChain buildPathFromLaunchZoneToStartBallPickup() {
-        FlippablePath fPath = FlippablePath.linearHeadingPath(new BezierLine(goalShootPose, startBallPickupPose),
-                goalShootPose.getHeading(), startBallPickupPose.getHeading());
+    private PathChain buildPathFromLaunchZoneToAudienceSideBallPickup() {
+        FlippablePath fPath = FlippablePath.linearHeadingPath(new BezierLine(goalShootPose, startAudienceBallPickupPose),
+                goalShootPose.getHeading(), startAudienceBallPickupPose.getHeading());
 
         return follower.pathBuilder()
             .addPath(fPath)
             .build();
     }
 
-    private PathChain buildPathFromStartToEndBallPickup() {
-        FlippablePath fPath = FlippablePath.constantHeadingPath(new BezierLine(startBallPickupPose, endBallPickupPose), startBallPickupPose.getHeading());
+    private PathChain buildPathFromLaunchZoneToMiddleSideBallPickup() {
+        FlippablePath fPath = FlippablePath.linearHeadingPath(new BezierLine(goalShootPose, startMiddleBallPickupPose),
+                goalShootPose.getHeading(), startMiddleBallPickupPose.getHeading());
+
+        return follower.pathBuilder()
+                .addPath(fPath)
+                .build();
+    }
+
+    private PathChain buildPathFromLaunchZoneToGoalSideBallPickup() {
+        FlippablePath fPath = FlippablePath.linearHeadingPath(new BezierLine(goalShootPose, startGoalBallPickupPose),
+                goalShootPose.getHeading(), startMiddleBallPickupPose.getHeading());
+
+        return follower.pathBuilder()
+                .addPath(fPath)
+                .build();
+    }
+
+    private PathChain buildPathFromAudienceSideBallPickupToEndBallPickup() {
+        FlippablePath fPath = FlippablePath.constantHeadingPath(new BezierLine(startAudienceBallPickupPose, endAudienceBallPickupPose),
+                startAudienceBallPickupPose.getHeading());
 
         return follower.pathBuilder()
             .addPath(fPath)
             .build();
     }
 
-    private PathChain buildPathFromEndPickupToLaunchZone() {
-        FlippablePath fPath = (FlippablePath) pathFromStartBallPickupToEndBallPickup.firstPath();
+    private PathChain buildPathFromMiddleSideBallPickupToEndBallPickup() {
+        FlippablePath fPath = FlippablePath.constantHeadingPath(new BezierLine(startMiddleBallPickupPose, endMiddleBallPickupPose),
+                startMiddleBallPickupPose.getHeading());
+
+        return follower.pathBuilder()
+            .addPath(fPath)
+            .build();
+    }
+
+    private PathChain buildPathFromGoalSideBallPickupToEndBallPickup() {
+        FlippablePath fPath = FlippablePath.constantHeadingPath(new BezierLine(startGoalBallPickupPose, endGoalBallPickupPose),
+                startGoalBallPickupPose.getHeading());
+
+        return follower.pathBuilder()
+            .addPath(fPath)
+            .build();
+    }
+
+    private PathChain buildpathFromAudienceSideEndBallPickupToLaunchZone() {
+        FlippablePath fPath = FlippablePath.linearHeadingPath(new BezierLine(endAudienceBallPickupPose, goalShootPose),
+                endAudienceBallPickupPose.getHeading(), goalShootPose.getHeading());
+
+        return follower.pathBuilder()
+            .addPath(fPath)
+            .build();
+    }
+
+    private PathChain buildpathFromMiddleSideEndBallPickupToLaunchZone() {
+        FlippablePath fPath = FlippablePath.linearHeadingPath(new BezierLine(endMiddleBallPickupPose, goalShootPose),
+                endMiddleBallPickupPose.getHeading(), goalShootPose.getHeading());
+
+        return follower.pathBuilder()
+                .addPath(fPath)
+                .build();
+    }
+
+    /*
+     * This demonstrates using FlippablePath.reverse(). However, this is not the most efficient
+     * way to get back to the launch zone.
+     */
+    private PathChain buildPathFromGoalSideEndPickupToLaunchZone() {
+        FlippablePath fPath = (FlippablePath) pathFromGoalSideBallPickupToEndBallPickup.firstPath();
         FlippablePath pathFromEndToStartPickup = fPath.reverse();
 
-        fPath = (FlippablePath) pathFromLaunchZoneToStartBallPickup.firstPath();
+        fPath = (FlippablePath) pathFromLaunchZoneToAudienceSideBallPickup.firstPath();
         FlippablePath pathFromStartPickupToLaunch = fPath.reverse();
 
         return follower.pathBuilder()
@@ -98,40 +182,104 @@ public class RedPedroPathsFrontWall implements AutonomousPedroPathsFrontWall {
             .build();
     }
 
-    private PathChain buildPathFromLaunchZoneToPark() {
-        return pathFromLaunchZoneToStartBallPickup;
+    private PathChain buildPathFromLaunchZoneToAudienceSideLeave() {
+        FlippablePath fPath = FlippablePath.linearHeadingPath(new BezierLine(goalShootPose, startAudienceBallPickupPose),
+                goalShootPose.getHeading(), startAudienceBallPickupPose.getHeading());
+
+        return follower.pathBuilder()
+            .addPath(fPath)
+            .build();
+    }
+
+    private PathChain buildPathFromLaunchZoneToMiddleSideLeave() {
+        FlippablePath fPath = FlippablePath.linearHeadingPath(new BezierLine(goalShootPose, startMiddleBallPickupPose),
+                goalShootPose.getHeading(), startMiddleBallPickupPose.getHeading());
+
+        return follower.pathBuilder()
+                .addPath(fPath)
+                .build();
+    }
+
+    private PathChain buildPathFromLaunchZoneToGoalSideLeave() {
+        FlippablePath fPath = FlippablePath.linearHeadingPath(new BezierLine(goalShootPose, startGoalBallPickupPose),
+                goalShootPose.getHeading(), startGoalBallPickupPose.getHeading());
+
+        return follower.pathBuilder()
+                .addPath(fPath)
+                .build();
+    }
+    /***********************************************************************************/
+    @Override
+    public Pose startingPose() {
+        return this.startingPose;
     }
 
     @Override
     public PathChain pathFromWallToLaunchZone() {
         return pathFromWallToLaunchZone;
     }
+    /***********************************************************************************/
 
     @Override
-    public PathChain pathFromLaunchZoneToStartBallPickup() {
-        return pathFromLaunchZoneToStartBallPickup;
-    }
-
-    //SLOW
-    @Override
-    public PathChain pathFromStartBallPickupToEndBallPickup() {
-        return pathFromStartBallPickupToEndBallPickup;
+    public PathChain pathFromLaunchZoneToAudienceSideBallPickup() {
+        return pathFromLaunchZoneToAudienceSideBallPickup;
     }
 
     @Override
-    public PathChain pathFromEndBallPickupToLaunchZone() {
-        return pathFromEndBallPickupToLaunchZone;
+    public PathChain pathFromLaunchZoneToMiddleSideBallPickup() {
+        return pathFromLaunchZoneToMiddleSideBallPickup;
     }
 
-/*
     @Override
-    public PathChain pathFromStartBallPickupToLaunchZone() {
-        return pathFromStartBallPickupToLaunchZone;
+    public PathChain pathFromLaunchZoneToGoalSideBallPickup() {
+        return pathFromLaunchZoneToGoalSideBallPickup;
     }
-*/
+    /***********************************************************************************/
 
     @Override
-    public PathChain pathFromLaunchZoneToPark() {
-        return pathFromLaunchZoneToPark;
+    public PathChain pathFromAudienceSideBallPickupToEndBallPickup() {
+        return pathFromAudienceSideBallPickupToEndBallPickup;
+    }
+
+    @Override
+    public PathChain pathFromMiddleSideBallPickupToEndBallPickup() {
+        return pathFromMiddleSideBallPickupToEndBallPickup;
+    }
+
+    @Override
+    public PathChain pathFromGoalSideBallPickupToEndBallPickup() {
+        return pathFromGoalSideBallPickupToEndBallPickup;
+    }
+    /***********************************************************************************/
+
+    @Override
+    public PathChain pathFromAudienceSideEndBallPickupToLaunchZone() {
+        return pathFromAudienceSideEndBallPickupToLaunchZone;
+    }
+
+    @Override
+    public PathChain pathFromMiddleSideEndBallPickupToLaunchZone() {
+        return pathFromMiddleSideEndBallPickupToLaunchZone;
+    }
+
+    @Override
+    public PathChain pathFromGoalSideEndBallPickupToLaunchZone() {
+        return pathFromGoalSideEndBallPickupToLaunchZone;
+    }
+    /***********************************************************************************/
+
+    @Override
+    public PathChain pathFromLaunchZoneToAudienceSideLeave() {
+        return pathFromLaunchZoneToAudienceSideLeave;
+    }
+
+    @Override
+    public PathChain pathFromLaunchZoneToMiddleSideLeave() {
+        return pathFromLaunchZoneToMiddleSideLeave;
+    }
+
+    @Override
+    public PathChain pathFromLaunchZoneToGoalSideLeave() {
+        return pathFromLaunchZoneToGoalSideLeave;
     }
 }
