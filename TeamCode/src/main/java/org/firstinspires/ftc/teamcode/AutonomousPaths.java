@@ -3,10 +3,12 @@ package org.firstinspires.ftc.teamcode;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.PathChain;
 
-public interface AutonomousPathsFrontWall {
-    Pose startingPose();
+public interface AutonomousPaths {
+    Pose frontWallstartingPose();
+    Pose backWallstartingPose();
     /***********************************************************************************/
-    PathChain pathFromWallToLaunchZone();
+    PathChain pathFromFrontWallToLaunchZone();
+    PathChain pathFromBackWallToLaunchZone();
     /***********************************************************************************/
     PathChain pathFromLaunchZoneToAudienceSideBallPickup();
     PathChain pathFromLaunchZoneToMiddleSideBallPickup();

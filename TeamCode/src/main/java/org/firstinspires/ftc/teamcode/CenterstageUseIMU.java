@@ -7,7 +7,6 @@ public class CenterstageUseIMU extends LinearOpMode {
     public void runOpMode() {
         RobotHardware robot = new RobotHardware(this);
         RobotWheels robotWheels = new RobotWheels(this, robot);
-        robot.init();
 
         while (opModeIsActive()) {
             //Drive straight

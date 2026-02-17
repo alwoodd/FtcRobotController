@@ -65,7 +65,7 @@ public class PedroPathConfiguration {
 
     private MecanumConstants buildMecanumConstants() {
         return new MecanumConstants()
-            .maxPower(.35)
+            .maxPower(.6)
             .leftFrontMotorName("leftFront")
             .leftRearMotorName("leftRear")
             .rightFrontMotorName("rightFront")

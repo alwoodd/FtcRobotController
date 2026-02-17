@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.pedropathing.follower.Follower;
+import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.PathChain;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -8,8 +9,8 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroPathFollower;
 import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroPathTelemetry;
 
-@Autonomous(name = "Start from front wall")
-public class DecodeAutonomousFrontWallOpMode extends LinearOpMode {
+@Autonomous(name = "Autonomous")
+public class DecodeAutonomousOpMode extends LinearOpMode {
     private double currentMaxPower, defaultMaxPower;
     private final double maxMaxPower = 1;
 
@@ -18,7 +19,11 @@ public class DecodeAutonomousFrontWallOpMode extends LinearOpMode {
     private final double ballPickupPower = .2;
     private AllianceColor selectedColor = AllianceColor.RED;
     private BallSpikeLocation ballSpikeLocation = BallSpikeLocation.AUDIENCE_SIDE;
-    private AutonomousPathsFrontWall pedroPaths;
+    private StartLocation startLocation = StartLocation.FRONT;
+    private AutonomousPaths pedroPaths;
+
+    private Pose startingPose;
+    private PathChain pathFromStartToLaunchZone;
     private PathChain pathFromLaunchZoneToStartBallPickup;
     private PathChain pathFromStartBallPickupToEndBallPickup;
     private PathChain pathFromEndBallPickupToLaunchZone;
@@ -43,13 +48,14 @@ public class DecodeAutonomousFrontWallOpMode extends LinearOpMode {
 
         pedroPaths = createPedroPaths(selectedColor);
         setBallSpikeLocationPaths();
+        setStartLocation();
         pedroTelemetry = new PedroPathTelemetry(telemetry, follower, selectedColor);
-        PedroPathFollower pedroPathFollower = new PedroPathFollower(this, follower, pedroTelemetry, pedroPaths.startingPose());
+        PedroPathFollower pedroPathFollower = new PedroPathFollower(this, follower, pedroTelemetry, startingPose);
 
         waitForStart();
 
         if (opModeIsActive()) {
-            pedroPathFollower.followPathChain(pedroPaths.pathFromWallToLaunchZone(), "Going from wall to launch zone");
+            pedroPathFollower.followPathChain(pathFromStartToLaunchZone, "Going from wall to launch zone");
             shootBalls();
             pedroPathFollower.followPathChain(pathFromLaunchZoneToStartBallPickup, "Going from launch zone to ball pickup");
             ballPickup();
@@ -86,6 +92,17 @@ public class DecodeAutonomousFrontWallOpMode extends LinearOpMode {
         }
     }
 
+    private void setStartLocation() {
+        if (startLocation == StartLocation.FRONT) {
+            pathFromStartToLaunchZone = pedroPaths.pathFromFrontWallToLaunchZone();
+            startingPose = pedroPaths.frontWallstartingPose();
+        }
+        else {
+            pathFromStartToLaunchZone = pedroPaths.pathFromBackWallToLaunchZone();
+            startingPose = pedroPaths.backWallstartingPose();
+        }
+    }
+
     /**
      * Depending on the passed selectedColor, instantiate and return either a
      * RedPedroPathsFrontWall or BluePedroPathsFrontWall.
@@ -93,12 +110,12 @@ public class DecodeAutonomousFrontWallOpMode extends LinearOpMode {
      * @param selectedColor RED or BLUE
      * @return AutonomousPedroPathsFrontWall
      */
-    private AutonomousPathsFrontWall createPedroPaths(AllianceColor selectedColor) {
+    private AutonomousPaths createPedroPaths(AllianceColor selectedColor) {
         if (selectedColor == AllianceColor.RED) {
-            return new RedPedroPathsFrontWall(follower);
+            return new RedPedroPaths(follower);
         }
         else {
-            return new BluePedroPathsFrontWall(follower, new RedPedroPathsFrontWall(follower));
+            return new BluePedroPaths(follower, new RedPedroPaths(follower));
         }
     }
 
@@ -127,12 +144,16 @@ public class DecodeAutonomousFrontWallOpMode extends LinearOpMode {
             telemetry.addLine("Press Left Bumper to toggle set ball pickup location");
             telemetry.addData(ballSpikeLocation.toString(), " currently selected");
             telemetry.addLine();
+            telemetry.addLine("Press Y to toggle between Front and Back starting location");
+            telemetry.addData(ballSpikeLocation.toString(), " currently selected");
+            telemetry.addLine();
             telemetry.addLine("Press X to toggle max speed between " + defaultMaxPower + " and " + maxMaxPower);
             telemetry.addData(String.valueOf(currentMaxPower), "currently selected");
             telemetry.update();
 
             selectedColor = AllianceColor.INSTANCE.toggleColor(gamepad1.rightBumperWasPressed(), selectedColor);
             ballSpikeLocation = BallSpikeLocation.INSTANCE.toggleLocation(gamepad1.leftBumperWasPressed(), ballSpikeLocation);
+            startLocation = StartLocation.INSTANCE.toggleLocation(gamepad1.yWasPressed(), startLocation);
             toggleMaxPower(gamepad1.xWasPressed());
         }
     }

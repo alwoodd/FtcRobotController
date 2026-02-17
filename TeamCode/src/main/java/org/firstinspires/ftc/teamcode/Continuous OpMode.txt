@@ -1,0 +1,124 @@
+interface Action {
+    void update();
+    boolean isBusy();
+}
+
+class ActionTimer implements Action {
+    private Timer timer;
+    private long maxMilliseconds;
+    private boolean isTimeout = false;
+    
+    public ActionTimer(long maxMilliseconds) }
+        this.maxMilliseconds = maxMilliseconds;
+        this.timer = new Timer();
+    }
+    
+    public update() {
+        isTimeout = false;
+        if (timer.getElapsedTime() > maxMilliseconds) {
+            isTimeout = true;
+        }
+    }
+    
+    public isBusy() {
+        return !isTimeout;
+    }
+    
+    public boolean isTimeout() {
+        return isTimeout;
+    }
+	
+	public void reset() {
+		timer.reset();
+	}
+}
+
+class BallShooter implements Action {
+    private boolean isBusy = false;
+    
+    public startShoot() {
+        robot.startSpinTake();
+        robot.startSideServos();
+        robot.setTopConveyPower(1);
+        isBusy = true;
+    }
+    
+    public stopShoot() {
+        robot.setTopConveyPower(0);
+        isBusy = false;
+    }
+    
+    public void update() {
+        //do nothing
+    }
+    
+    public boolean isBusy() {
+        return isBusy;
+    }
+}
+
+class BallSensor implements Action {
+    private boolean isBallPresent = false;
+    
+    private RGBAcolors getSensorColors() {
+        
+    }
+    
+    public void update() {
+        int colorThreshold = 100;
+        isBallPresent = false;
+        
+        RGBAcolors currentColors = getSensorColors();
+        if (currentColors.getRed() > colorThreshold ||
+            currentColors.getBlue() > colorThreshold ||
+            currentColors.getGreen() > colorThreshold) {
+            isBallPresent = true;
+        }
+    }
+    
+    public boolean isBusy() {
+        return false;
+    }
+    
+    public boolean isPresent() {
+        return isBallPresent;
+    }
+}
+
+class AutonomousOpMode {
+    
+    public void runOpMode() {
+        
+        while (opModeIsActive()) {
+            follower.update();
+            ballSensor.update();
+            ballShooter.update();
+            shootActionTimer.update();
+            performActions();
+        }
+    }
+    
+    private void performActions() {
+        switch (pathState) {
+            case n:
+                if (!follower.isBusy()) {
+                    //We've arrived, so start shooting if we're not already.
+                    if (!ballShooter.isBusy() {
+                        if (ballSensor.isPresent()) {
+							shootActionTimer.reset();
+                            ballShooter.startShoot();
+                        }
+                    }
+                    //We're still at the arrival location. Stop shooting if we're out of balls
+                    //or we've timed-out, then follow the next path.
+                    else if (!ballSensor.isPresent() || shootActionTimer.isTimeout()) {
+                        ballShooter.stopShoot();
+                        follower.followPath(pathFromLaunchZoneToStartBallPickup);
+                        pathState++;
+                    }
+                }
+                break;
+            case x:
+        }
+    }
+}

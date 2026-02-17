@@ -11,7 +11,6 @@ public class CenterstageUseArm extends LinearOpMode {
     @Override
     public void runOpMode() {
         RobotHardware robot = new RobotHardware(this);
-        robot.init();
 
         //Assume robot is already positioned.
         while (opModeIsActive()) {

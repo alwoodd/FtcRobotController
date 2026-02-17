@@ -6,11 +6,12 @@ import com.pedropathing.paths.PathChain;
 
 import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroPathFlipper;
 
-public class BluePedroPathsFrontWall implements AutonomousPathsFrontWall {
-    private final AutonomousPathsFrontWall redPedroPaths;
+public class BluePedroPaths implements AutonomousPaths {
+    private final AutonomousPaths redPedroPaths;
     private final PedroPathFlipper pathFlipper;
 
-    private PathChain pathFromWallToLaunchZone;
+    private PathChain pathFromFrontWallToLaunchZone;
+    private PathChain pathFromBackWallToLaunchZone;
 
     private PathChain pathFromLaunchZoneToAudienceSideBallPickup;
     private PathChain pathFromLaunchZoneToMiddleSideBallPickup;
@@ -28,14 +29,15 @@ public class BluePedroPathsFrontWall implements AutonomousPathsFrontWall {
     private PathChain pathFromLaunchZoneToMiddleSideLeave;
     private PathChain pathFromLaunchZoneToGoalSideLeave;
 
-    public BluePedroPathsFrontWall(Follower follower, AutonomousPathsFrontWall redPedroPaths) {
+    public BluePedroPaths(Follower follower, AutonomousPaths redPedroPaths) {
         this.redPedroPaths = redPedroPaths;
         this.pathFlipper = new PedroPathFlipper(follower);
         initPaths();
     }
 
     private void initPaths() {
-        this.pathFromWallToLaunchZone = buildPathFromWallToLaunchZone();
+        this.pathFromFrontWallToLaunchZone = buildPathFromFrontWallToLaunchZone();
+        this.pathFromBackWallToLaunchZone = buildPathFromBackWallToLaunchZone();
 
         this.pathFromLaunchZoneToAudienceSideBallPickup = buildPathFromLaunchZoneToAudienceSideBallPickup();
         this.pathFromLaunchZoneToMiddleSideBallPickup = buildPathFromLaunchZoneToMiddleSideBallPickup();
@@ -54,8 +56,12 @@ public class BluePedroPathsFrontWall implements AutonomousPathsFrontWall {
         this.pathFromLaunchZoneToGoalSideLeave = buildPathFromLaunchZoneToGoalSideLeave();
     }
 
-    private PathChain buildPathFromWallToLaunchZone() {
-        return pathFlipper.flipPathChain(redPedroPaths.pathFromWallToLaunchZone());
+    private PathChain buildPathFromFrontWallToLaunchZone() {
+        return pathFlipper.flipPathChain(redPedroPaths.pathFromFrontWallToLaunchZone());
+    }
+
+    private PathChain buildPathFromBackWallToLaunchZone() {
+        return pathFlipper.flipPathChain((redPedroPaths.pathFromBackWallToLaunchZone()));
     }
 
     private PathChain buildPathFromLaunchZoneToAudienceSideBallPickup() {
@@ -107,15 +113,24 @@ public class BluePedroPathsFrontWall implements AutonomousPathsFrontWall {
     }
     /***********************************************************************************/
     @Override
-    public Pose startingPose() {
-        return this.pathFromWallToLaunchZone.firstPath().getFirstControlPoint();
+    public Pose frontWallstartingPose() {
+        return this.pathFromFrontWallToLaunchZone.firstPath().getFirstControlPoint();
     }
 
     @Override
-    public PathChain pathFromWallToLaunchZone() {
-        return pathFromWallToLaunchZone;
+    public Pose backWallstartingPose() {
+        return this.pathFromBackWallToLaunchZone.firstPath().getFirstControlPoint();
     }
-    /***********************************************************************************/
+
+    @Override
+    public PathChain pathFromFrontWallToLaunchZone() {
+        return pathFromFrontWallToLaunchZone;
+    }
+
+    @Override
+    public PathChain pathFromBackWallToLaunchZone() {
+        return pathFromBackWallToLaunchZone;
+    }    /***********************************************************************************/
 
     @Override
     public PathChain pathFromLaunchZoneToAudienceSideBallPickup() {

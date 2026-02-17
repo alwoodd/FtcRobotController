@@ -9,7 +9,6 @@ public class CenterstageDriverControlled  extends LinearOpMode {
     @Override
     public void runOpMode() {
         RobotHardware robot = new RobotHardware(this);
-        robot.init();
         RobotWheels robotWheels = new RobotWheels(this, robot);
         robotWheels.init();
 

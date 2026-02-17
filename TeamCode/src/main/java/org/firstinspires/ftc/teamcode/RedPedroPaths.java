@@ -3,7 +3,6 @@ package org.firstinspires.ftc.teamcode;
 import com.pedropathing.geometry.BezierCurve;
 import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
-import com.pedropathing.paths.Path;
 import com.pedropathing.paths.PathBuilder;
 
 import com.pedropathing.follower.Follower;
@@ -11,10 +10,11 @@ import com.pedropathing.paths.PathChain;
 
 import org.firstinspires.ftc.teamcode.teamPedroPathing.FlippablePath;
 
-public class RedPedroPathsFrontWall implements AutonomousPathsFrontWall {
+public class RedPedroPaths implements AutonomousPaths {
     private final Follower follower;
 
-    private final Pose startingPose = new Pose(85.0, 8.5, Math.toRadians(90));
+    private final Pose frontWallStartingPose = new Pose(85.0, 8.5, Math.toRadians(90));
+    private final Pose backWallStartingPose = new Pose();
     private final Pose goalShootPose = new Pose(108.4, 120.3, Math.toRadians(28));
 
     private final Pose startAudienceBallPickupPose = new Pose(108.7, 35.5, Math.toRadians(180));
@@ -26,7 +26,8 @@ public class RedPedroPathsFrontWall implements AutonomousPathsFrontWall {
     private final Pose startGoalBallPickupPose = new Pose(108.7, 83.5, Math.toRadians(180));
     private final Pose endGoalBallPickupPose = new Pose(119.9, 83.5, Math.toRadians(180));
 
-    private PathChain pathFromWallToLaunchZone;
+    private PathChain pathFromFrontWallToLaunchZone;
+    private PathChain pathFromBackWallToLaunchZone;
 
     private PathChain pathFromLaunchZoneToAudienceSideBallPickup;
     private PathChain pathFromLaunchZoneToMiddleSideBallPickup;
@@ -44,13 +45,14 @@ public class RedPedroPathsFrontWall implements AutonomousPathsFrontWall {
     private PathChain pathFromLaunchZoneToMiddleSideLeave;
     private PathChain pathFromLaunchZoneToGoalSideLeave;
 
-    public RedPedroPathsFrontWall(Follower follower) {
+    public RedPedroPaths(Follower follower) {
         this.follower = follower;
         initPaths();
     }
 
     private void initPaths() {
-        this.pathFromWallToLaunchZone = buildPathFromWallToLaunchZone();
+        this.pathFromFrontWallToLaunchZone = buildPathFromFrontWallToLaunchZone();
+        this.pathFromBackWallToLaunchZone = buildPathFromBackWallToLaunchZone();
 
         this.pathFromLaunchZoneToAudienceSideBallPickup = buildPathFromLaunchZoneToAudienceSideBallPickup();
         this.pathFromLaunchZoneToMiddleSideBallPickup = buildPathFromLaunchZoneToMiddleSideBallPickup();
@@ -69,13 +71,13 @@ public class RedPedroPathsFrontWall implements AutonomousPathsFrontWall {
         this.pathFromLaunchZoneToGoalSideLeave = buildPathFromLaunchZoneToGoalSideLeave();
     }
 
-    private PathChain buildPathFromWallToLaunchZone() {
+    private PathChain buildPathFromFrontWallToLaunchZone() {
         PathBuilder builder = follower.pathBuilder();
         builder
             .addPath(
                 FlippablePath.tangentHeadingPath(
                     new BezierLine(
-                        startingPose,
+                            frontWallStartingPose,
                         new Pose(85, 95, Math.toRadians(90))
                     )
                 )
@@ -91,6 +93,15 @@ public class RedPedroPathsFrontWall implements AutonomousPathsFrontWall {
             );
 
         return builder.build();
+    }
+
+    private PathChain buildPathFromBackWallToLaunchZone() {
+        FlippablePath fPath = FlippablePath.linearHeadingPath(new BezierLine(backWallStartingPose, goalShootPose),
+            backWallStartingPose.getHeading(), goalShootPose. getHeading());
+
+        return follower.pathBuilder()
+                .addPath(fPath)
+                .build();
     }
 
     private PathChain buildPathFromLaunchZoneToAudienceSideBallPickup() {
@@ -210,15 +221,24 @@ public class RedPedroPathsFrontWall implements AutonomousPathsFrontWall {
     }
     /***********************************************************************************/
     @Override
-    public Pose startingPose() {
-        return this.startingPose;
+    public Pose frontWallstartingPose() {
+        return this.frontWallStartingPose;
     }
 
     @Override
-    public PathChain pathFromWallToLaunchZone() {
-        return pathFromWallToLaunchZone;
+    public Pose backWallstartingPose() {
+        return this.frontWallStartingPose;
     }
-    /***********************************************************************************/
+
+    @Override
+    public PathChain pathFromFrontWallToLaunchZone() {
+        return pathFromFrontWallToLaunchZone;
+    }
+
+    @Override
+    public PathChain pathFromBackWallToLaunchZone() {
+        return pathFromBackWallToLaunchZone;
+    }    /***********************************************************************************/
 
     @Override
     public PathChain pathFromLaunchZoneToAudienceSideBallPickup() {
