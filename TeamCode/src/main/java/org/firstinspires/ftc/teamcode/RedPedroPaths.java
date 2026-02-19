@@ -26,6 +26,8 @@ public class RedPedroPaths implements AutonomousPaths {
     private final Pose startGoalBallPickupPose = new Pose(108.7, 83.5, Math.toRadians(180));
     private final Pose endGoalBallPickupPose = new Pose(119.9, 83.5, Math.toRadians(180));
 
+    private final Pose parkPose = new Pose(38.8, 33.2, Math.toRadians(180));
+
     private PathChain pathFromFrontWallToLaunchZone;
     private PathChain pathFromBackWallToLaunchZone;
 
@@ -228,6 +230,11 @@ public class RedPedroPaths implements AutonomousPaths {
     @Override
     public Pose backWallstartingPose() {
         return this.frontWallStartingPose;
+    }
+
+    @Override
+    public Pose parkPose() {
+        return this.parkPose;
     }
 
     @Override

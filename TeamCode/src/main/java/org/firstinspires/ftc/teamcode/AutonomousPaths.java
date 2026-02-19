@@ -6,6 +6,7 @@ import com.pedropathing.paths.PathChain;
 public interface AutonomousPaths {
     Pose frontWallstartingPose();
     Pose backWallstartingPose();
+    Pose parkPose();
     /***********************************************************************************/
     PathChain pathFromFrontWallToLaunchZone();
     PathChain pathFromBackWallToLaunchZone();

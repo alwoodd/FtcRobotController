@@ -7,6 +7,8 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroPathTelemetry;
+import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroSleep;
+import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroTeleopData;
 
 import java.lang.reflect.Field;
 
@@ -19,15 +21,6 @@ import java.lang.reflect.Field;
  */
 @Autonomous(name = "Autonomous with actions")
 public class DecodeAutonomousOpModeWithActions extends LinearOpMode {
-    /*
-     * If the teleOp OpMod running after this OpMode has a static start Pose field you can
-     * set with this OpMode's last Pose, set teleOpClass name to its class name,
-     * and startingPoseFieldName to the static Pose field's name.
-     */
-    private final String teleOpClassName = "org.firstinspires.ftc.teamcode.PedroPathTeleOp";
-    private final String startingPoseFieldName = "startPose";
-    private Field startingPoseField = null;
-
     private PedroPathTelemetry pedroTelemetry;
     private Follower follower;
     private final double ballPickupPower = .3;
@@ -39,6 +32,7 @@ public class DecodeAutonomousOpModeWithActions extends LinearOpMode {
     private int pathState = 0;
     private RobotHardware robot;
     private AutonomousPaths pedroPaths;
+    private PedroSleep pedroSleep;
 
     private PathChain pathFromStartToLaunchZone;
     private PathChain pathFromLaunchZoneToStartBallPickup;
@@ -50,13 +44,10 @@ public class DecodeAutonomousOpModeWithActions extends LinearOpMode {
 
     @Override
     public void runOpMode() throws InterruptedException {
-        initTeleOpStartPoseField();
-
         robot = new RobotHardware(this);
-
         PedroPathConfiguration pedroPathConfiguration = new PedroPathConfiguration(this);
-
         follower = pedroPathConfiguration.getFollower();
+        pedroSleep = new PedroSleep(follower);
 
         defaultMaxPower = follower.getMaxPowerScaling();
         currentMaxPower = defaultMaxPower;
@@ -67,6 +58,7 @@ public class DecodeAutonomousOpModeWithActions extends LinearOpMode {
         setBallSpikeLocationPaths();
         setRobotStartLocation();
         pedroTelemetry = new PedroPathTelemetry(telemetry, follower, selectedColor);
+        PedroTeleopData.allianceColor = selectedColor;
 
         follower.setStartingPose(pedroPaths.frontWallstartingPose());
 
@@ -89,7 +81,7 @@ public class DecodeAutonomousOpModeWithActions extends LinearOpMode {
 */
         }
 
-        setLastPose(follower.getPose());
+        PedroTeleopData.startingPose = follower.getPose();
     }
 
     private boolean performActions() {
@@ -146,22 +138,13 @@ public class DecodeAutonomousOpModeWithActions extends LinearOpMode {
     //Emulate shooting balls.
     private void shootBalls(){
         pedroTelemetry.pathTelemetry("Shooting balls.");
-        pedroSleep(3000);
+        pedroSleep.sleep(3000);
     }
 
     //Emulate pickup up balls.
     private void ballPickup(){
         pedroTelemetry.pathTelemetry("Ball scooper turned on.");
-        pedroSleep(2000);
-    }
-
-    //Design crutch. See Continuous OpMode for better design.
-    private void pedroSleep(long milliseconds) {
-        long updateFrequency = 250;
-        for (long m = 0; m < milliseconds; m += updateFrequency) {
-            sleep(updateFrequency);
-            follower.update();
-        }
+        pedroSleep.sleep(2000);
     }
 
     /**
@@ -255,39 +238,5 @@ public class DecodeAutonomousOpModeWithActions extends LinearOpMode {
                 currentMaxPower = defaultMaxPower;
             }
         }
-    }
-
-    /**
-     * Get reference to the (static) field in the teleOpClass that will be used to set its startPose.
-     * Run these "heavy lifters" early so we can minimize the work happening in setLastPose().
-     */
-    private void initTeleOpStartPoseField() {
-        try {
-            Class<?> teleOpClass = Class.forName(teleOpClassName);
-            startingPoseField = teleOpClass.getField(startingPoseFieldName);
-        } catch (ClassNotFoundException e) {
-            pedroTelemetry.pathTelemetry("Class " + teleOpClassName + " not found.");
-        }
-        catch (NoSuchFieldException e) {
-            pedroTelemetry.pathTelemetry("Field " + startingPoseFieldName + " not found for class " + teleOpClassName);
-        }
-    }
-
-    /**
-     * Set the startPose of the teleOpClass.
-     * Typically this is the last/current Pose of the follower.
-     * @param pose Pose for setting teleOpClass startPose.
-     */
-    private void setLastPose(Pose pose) {
-        if (startingPoseField != null) {
-            try {
-                startingPoseField.set(null, pose);
-            } catch (IllegalAccessException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        telemetry.addLine("startingPoseField SET!");
-        telemetry.update();
-        sleep(2500);
     }
 }
