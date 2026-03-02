@@ -4,6 +4,7 @@ public enum BallSpikeLocation {
     AUDIENCE_SIDE,
     MIDDLE,
     GOAL_SIDE,
+    NONE,
     INSTANCE;
 
     /**
@@ -15,6 +16,9 @@ public enum BallSpikeLocation {
     public BallSpikeLocation toggleLocation(boolean buttonPressed, BallSpikeLocation currentLocation) {
         if (buttonPressed) {
             switch (currentLocation) {
+                case NONE:
+                    currentLocation = AUDIENCE_SIDE;
+                    break;
                 case AUDIENCE_SIDE:
                     currentLocation = MIDDLE;
                     break;
@@ -22,7 +26,7 @@ public enum BallSpikeLocation {
                     currentLocation = GOAL_SIDE;
                     break;
                 case GOAL_SIDE:
-                    currentLocation = AUDIENCE_SIDE;
+                    currentLocation = NONE;
                     break;
             }
         }

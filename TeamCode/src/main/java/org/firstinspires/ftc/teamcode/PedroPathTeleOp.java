@@ -7,6 +7,7 @@ import com.pedropathing.paths.PathChain;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroPathTelemetry;
 import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroSleep;
 import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroTeleopData;
@@ -25,6 +26,7 @@ public class PedroPathTeleOp extends LinearOpMode {
     }
     private FollowPathDestination followPathDestination;
     private Follower follower;
+    private AllianceColor allianceColor;
 
     private Pose launchPose;// = new Pose(90, 90, Math.toRadians(45));
     private Pose parkPose;
@@ -34,27 +36,23 @@ public class PedroPathTeleOp extends LinearOpMode {
 
     @Override
     public void runOpMode() throws InterruptedException {
-        RobotHardware robot = new RobotHardware(this);
+        //RobotHardware robot = new RobotHardware(this);
 
         PedroPathConfiguration pedroPathConfiguration = new PedroPathConfiguration(this);
 
         follower = pedroPathConfiguration.getFollower();
         follower.setStartingPose(PedroTeleopData.startingPose == null ? new Pose() :
                 PedroTeleopData.startingPose);
-        AllianceColor allianceColor = PedroTeleopData.allianceColor == null ? AllianceColor.RED :
+        allianceColor = PedroTeleopData.allianceColor == null ? AllianceColor.RED :
                 PedroTeleopData.allianceColor;
-        setPoses(allianceColor);
         pedroPathTelemetry = new PedroPathTelemetry(telemetry, follower, allianceColor);
-        pedroSleep = new PedroSleep(follower);
+        initSetup();
+        setPoses(allianceColor);
 
         follower.startTeleOpDrive(); //This calls update() as well.
-        pedroPathTelemetry.pathTelemetry("");
-
         waitForStart();
 
-        /*
-         * The follower can be either in startTeleOpDrive() or followPath().
-         */
+        //The follower can be either in startTeleOpDrive() or followPath().
         String pedroMessage = "";
         while(opModeIsActive()) {
             follower.update();
@@ -65,11 +63,11 @@ public class PedroPathTeleOp extends LinearOpMode {
                 follower.setTeleOpDrive(-gamepad1.left_stick_y, -gamepad1.left_stick_x, -gamepad1.right_stick_x, true);
                 pedroMessage = "TeleOp Mode";
             }
-            /*
-             * If not isTeleopDrive(), then we might still be following a Path.
+             /* If not isTeleopDrive(), then we might still be following a Path.
              * If that Path is complete (not isBusy()), performPathEndActions(),
              * then re-startTeleOpDrive().
              */
+
             else if (!follower.isBusy()) {
                 performPathEndActions();
                 follower.startTeleOpDrive();
@@ -171,5 +169,25 @@ public class PedroPathTeleOp extends LinearOpMode {
 
         launchPose = paths.pathFromBackWallToLaunchZone().endPose();
         parkPose = paths.parkPose();
+    }
+
+    /**
+     * Initialization time setup.
+     */
+    private void initSetup() {
+        telemetry.setAutoClear(false);
+        pedroPathTelemetry.pathTelemetry("Initialize Setup");
+
+        telemetry.addLine("Press Right Bumper to toggle between Red and Blue alliance.");
+        Telemetry.Item allianceColorItem = telemetry.addData(allianceColor.toString(), " currently selected");;
+
+        while (opModeInInit()) {
+            allianceColorItem.setCaption(allianceColor.toString());
+            pedroPathTelemetry.setAllianceColor(allianceColor);
+            telemetry.update();
+
+            allianceColor = AllianceColor.INSTANCE.toggleColor(gamepad1.rightBumperWasPressed(), allianceColor);
+        }
+        telemetry.setAutoClear(true);
     }
 }

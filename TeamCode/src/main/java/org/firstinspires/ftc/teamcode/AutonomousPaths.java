@@ -27,4 +27,7 @@ public interface AutonomousPaths {
     PathChain pathFromLaunchZoneToAudienceSideLeave();
     PathChain pathFromLaunchZoneToMiddleSideLeave();
     PathChain pathFromLaunchZoneToGoalSideLeave();
+    /***********************************************************************************/
+    PathChain pathFromFrontWallToFrontLaunchZone();
+    PathChain pathFromFrontLaunchZoneToLeave();
 }

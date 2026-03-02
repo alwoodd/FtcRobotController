@@ -13,6 +13,7 @@ public class BluePedroPaths implements AutonomousPaths {
 
     private PathChain pathFromFrontWallToLaunchZone;
     private PathChain pathFromBackWallToLaunchZone;
+    private PathChain pathFromFrontWallToFrontLaunchZone;
 
     private PathChain pathFromLaunchZoneToAudienceSideBallPickup;
     private PathChain pathFromLaunchZoneToMiddleSideBallPickup;
@@ -29,6 +30,7 @@ public class BluePedroPaths implements AutonomousPaths {
     private PathChain pathFromLaunchZoneToAudienceSideLeave;
     private PathChain pathFromLaunchZoneToMiddleSideLeave;
     private PathChain pathFromLaunchZoneToGoalSideLeave;
+    private PathChain pathFromFrontLaunchZoneToLeave;
 
     public BluePedroPaths(Follower follower, AutonomousPaths redPedroPaths) {
         this.redPedroPaths = redPedroPaths;
@@ -39,6 +41,7 @@ public class BluePedroPaths implements AutonomousPaths {
     private void initPaths() {
         this.pathFromFrontWallToLaunchZone = buildPathFromFrontWallToLaunchZone();
         this.pathFromBackWallToLaunchZone = buildPathFromBackWallToLaunchZone();
+        this.pathFromFrontWallToFrontLaunchZone = buildPathFromFrontWallToFrontLaunchZone();
 
         this.pathFromLaunchZoneToAudienceSideBallPickup = buildPathFromLaunchZoneToAudienceSideBallPickup();
         this.pathFromLaunchZoneToMiddleSideBallPickup = buildPathFromLaunchZoneToMiddleSideBallPickup();
@@ -55,6 +58,7 @@ public class BluePedroPaths implements AutonomousPaths {
         this.pathFromLaunchZoneToAudienceSideLeave = buildPathFromLaunchZoneToAudienceSideLeave();
         this.pathFromLaunchZoneToMiddleSideLeave = buildPathFromLaunchZoneToMiddleSideLeave();
         this.pathFromLaunchZoneToGoalSideLeave = buildPathFromLaunchZoneToGoalSideLeave();
+        this.pathFromFrontLaunchZoneToLeave = buildPathFromFrontLaunchZoneToLeave();
     }
 
     private PathChain buildPathFromFrontWallToLaunchZone() {
@@ -63,6 +67,10 @@ public class BluePedroPaths implements AutonomousPaths {
 
     private PathChain buildPathFromBackWallToLaunchZone() {
         return pathFlipper.flipPathChain((redPedroPaths.pathFromBackWallToLaunchZone()));
+    }
+
+    private PathChain buildPathFromFrontWallToFrontLaunchZone() {
+        return pathFlipper.flipPathChain(redPedroPaths.pathFromFrontWallToFrontLaunchZone());
     }
 
     private PathChain buildPathFromLaunchZoneToAudienceSideBallPickup() {
@@ -112,7 +120,11 @@ public class BluePedroPaths implements AutonomousPaths {
     private PathChain buildPathFromLaunchZoneToGoalSideLeave() {
         return pathFlipper.flipPathChain(redPedroPaths.pathFromLaunchZoneToGoalSideLeave());
     }
-    /***********************************************************************************/
+
+    private PathChain buildPathFromFrontLaunchZoneToLeave() {
+        return pathFlipper.flipPathChain(redPedroPaths.pathFromFrontWallToFrontLaunchZone());
+    }
+        /***********************************************************************************/
     @Override
     public Pose frontWallstartingPose() {
         return this.pathFromFrontWallToLaunchZone.firstPath().getFirstControlPoint();
@@ -142,7 +154,13 @@ public class BluePedroPaths implements AutonomousPaths {
     @Override
     public PathChain pathFromBackWallToLaunchZone() {
         return pathFromBackWallToLaunchZone;
-    }    /***********************************************************************************/
+    }
+
+    @Override
+    public PathChain pathFromFrontWallToFrontLaunchZone() {
+        return pathFromFrontWallToFrontLaunchZone;
+    }
+    /***********************************************************************************/
 
     @Override
     public PathChain pathFromLaunchZoneToAudienceSideBallPickup() {
@@ -205,5 +223,10 @@ public class BluePedroPaths implements AutonomousPaths {
     @Override
     public PathChain pathFromLaunchZoneToGoalSideLeave() {
         return pathFromLaunchZoneToGoalSideLeave;
+    }
+
+    @Override
+    public PathChain pathFromFrontLaunchZoneToLeave() {
+        return pathFromFrontLaunchZoneToLeave;
     }
 }

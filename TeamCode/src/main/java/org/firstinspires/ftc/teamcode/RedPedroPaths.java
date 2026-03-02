@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode;
 import com.pedropathing.geometry.BezierCurve;
 import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
+import com.pedropathing.paths.Path;
 import com.pedropathing.paths.PathBuilder;
 
 import com.pedropathing.follower.Follower;
@@ -14,8 +15,9 @@ public class RedPedroPaths implements AutonomousPaths {
     private final Follower follower;
 
     private final Pose frontWallStartingPose = new Pose(85.0, 8.5, Math.toRadians(90));
-    private final Pose backWallStartingPose = new Pose();
-    private final Pose goalShootPose = new Pose(108.4, 120.3, Math.toRadians(28));
+    private final Pose backWallStartingPose = new Pose(121.3, 125.3, Math.toRadians(-142));
+    private final Pose backGoalShootPose = new Pose(108.4, 120.3, Math.toRadians(28));
+    private final Pose frontGoalShootPose = new Pose(85, 8.5, Math.toRadians(70));
 
     private final Pose startAudienceBallPickupPose = new Pose(108.7, 35.5, Math.toRadians(180));
     private final Pose endAudienceBallPickupPose = new Pose(119.9, 35.5, Math.toRadians(180));
@@ -30,6 +32,7 @@ public class RedPedroPaths implements AutonomousPaths {
 
     private PathChain pathFromFrontWallToLaunchZone;
     private PathChain pathFromBackWallToLaunchZone;
+    private PathChain pathFromFrontWallToFrontLaunchZone;
 
     private PathChain pathFromLaunchZoneToAudienceSideBallPickup;
     private PathChain pathFromLaunchZoneToMiddleSideBallPickup;
@@ -46,6 +49,7 @@ public class RedPedroPaths implements AutonomousPaths {
     private PathChain pathFromLaunchZoneToAudienceSideLeave;
     private PathChain pathFromLaunchZoneToMiddleSideLeave;
     private PathChain pathFromLaunchZoneToGoalSideLeave;
+    private PathChain pathFromFrontLaunchZoneToLeave;
 
     public RedPedroPaths(Follower follower) {
         this.follower = follower;
@@ -55,6 +59,7 @@ public class RedPedroPaths implements AutonomousPaths {
     private void initPaths() {
         this.pathFromFrontWallToLaunchZone = buildPathFromFrontWallToLaunchZone();
         this.pathFromBackWallToLaunchZone = buildPathFromBackWallToLaunchZone();
+        this.pathFromFrontWallToFrontLaunchZone = buildPathFromFrontWallToFrontLaunchZone();
 
         this.pathFromLaunchZoneToAudienceSideBallPickup = buildPathFromLaunchZoneToAudienceSideBallPickup();
         this.pathFromLaunchZoneToMiddleSideBallPickup = buildPathFromLaunchZoneToMiddleSideBallPickup();
@@ -71,6 +76,7 @@ public class RedPedroPaths implements AutonomousPaths {
         this.pathFromLaunchZoneToAudienceSideLeave = buildPathFromLaunchZoneToAudienceSideLeave();
         this.pathFromLaunchZoneToMiddleSideLeave = buildPathFromLaunchZoneToMiddleSideLeave();
         this.pathFromLaunchZoneToGoalSideLeave = buildPathFromLaunchZoneToGoalSideLeave();
+        this.pathFromFrontLaunchZoneToLeave = buildPathFromFrontLaunchZoneToLeave();
     }
 
     private PathChain buildPathFromFrontWallToLaunchZone() {
@@ -89,7 +95,7 @@ public class RedPedroPaths implements AutonomousPaths {
                     new BezierCurve(
                         new Pose(85, 95, Math.toRadians(90)),
                         new Pose(91.366, 111.208),
-                        goalShootPose
+                            backGoalShootPose
                     )
                 )
             );
@@ -98,8 +104,17 @@ public class RedPedroPaths implements AutonomousPaths {
     }
 
     private PathChain buildPathFromBackWallToLaunchZone() {
-        FlippablePath fPath = FlippablePath.linearHeadingPath(new BezierLine(backWallStartingPose, goalShootPose),
-            backWallStartingPose.getHeading(), goalShootPose. getHeading());
+        FlippablePath fPath = FlippablePath.linearHeadingPath(new BezierLine(backWallStartingPose, backGoalShootPose),
+            backWallStartingPose.getHeading(), backGoalShootPose. getHeading());
+
+        return follower.pathBuilder()
+                .addPath(fPath)
+                .build();
+    }
+
+    private PathChain buildPathFromFrontWallToFrontLaunchZone() {
+        FlippablePath fPath = FlippablePath.linearHeadingPath(new BezierLine(frontWallStartingPose, frontGoalShootPose),
+            frontWallStartingPose.getHeading(), frontGoalShootPose.getHeading());
 
         return follower.pathBuilder()
                 .addPath(fPath)
@@ -107,8 +122,8 @@ public class RedPedroPaths implements AutonomousPaths {
     }
 
     private PathChain buildPathFromLaunchZoneToAudienceSideBallPickup() {
-        FlippablePath fPath = FlippablePath.linearHeadingPath(new BezierLine(goalShootPose, startAudienceBallPickupPose),
-                goalShootPose.getHeading(), startAudienceBallPickupPose.getHeading());
+        FlippablePath fPath = FlippablePath.linearHeadingPath(new BezierLine(backGoalShootPose, startAudienceBallPickupPose),
+                backGoalShootPose.getHeading(), startAudienceBallPickupPose.getHeading());
 
         return follower.pathBuilder()
             .addPath(fPath)
@@ -116,8 +131,8 @@ public class RedPedroPaths implements AutonomousPaths {
     }
 
     private PathChain buildPathFromLaunchZoneToMiddleSideBallPickup() {
-        FlippablePath fPath = FlippablePath.linearHeadingPath(new BezierLine(goalShootPose, startMiddleBallPickupPose),
-                goalShootPose.getHeading(), startMiddleBallPickupPose.getHeading());
+        FlippablePath fPath = FlippablePath.linearHeadingPath(new BezierLine(backGoalShootPose, startMiddleBallPickupPose),
+                backGoalShootPose.getHeading(), startMiddleBallPickupPose.getHeading());
 
         return follower.pathBuilder()
                 .addPath(fPath)
@@ -125,8 +140,8 @@ public class RedPedroPaths implements AutonomousPaths {
     }
 
     private PathChain buildPathFromLaunchZoneToGoalSideBallPickup() {
-        FlippablePath fPath = FlippablePath.linearHeadingPath(new BezierLine(goalShootPose, startGoalBallPickupPose),
-                goalShootPose.getHeading(), startMiddleBallPickupPose.getHeading());
+        FlippablePath fPath = FlippablePath.linearHeadingPath(new BezierLine(backGoalShootPose, startGoalBallPickupPose),
+                backGoalShootPose.getHeading(), startMiddleBallPickupPose.getHeading());
 
         return follower.pathBuilder()
                 .addPath(fPath)
@@ -161,8 +176,8 @@ public class RedPedroPaths implements AutonomousPaths {
     }
 
     private PathChain buildpathFromAudienceSideEndBallPickupToLaunchZone() {
-        FlippablePath fPath = FlippablePath.linearHeadingPath(new BezierLine(endAudienceBallPickupPose, goalShootPose),
-                endAudienceBallPickupPose.getHeading(), goalShootPose.getHeading());
+        FlippablePath fPath = FlippablePath.linearHeadingPath(new BezierLine(endAudienceBallPickupPose, backGoalShootPose),
+                endAudienceBallPickupPose.getHeading(), backGoalShootPose.getHeading());
 
         return follower.pathBuilder()
             .addPath(fPath)
@@ -170,8 +185,8 @@ public class RedPedroPaths implements AutonomousPaths {
     }
 
     private PathChain buildpathFromMiddleSideEndBallPickupToLaunchZone() {
-        FlippablePath fPath = FlippablePath.linearHeadingPath(new BezierLine(endMiddleBallPickupPose, goalShootPose),
-                endMiddleBallPickupPose.getHeading(), goalShootPose.getHeading());
+        FlippablePath fPath = FlippablePath.linearHeadingPath(new BezierLine(endMiddleBallPickupPose, backGoalShootPose),
+                endMiddleBallPickupPose.getHeading(), backGoalShootPose.getHeading());
 
         return follower.pathBuilder()
                 .addPath(fPath)
@@ -196,8 +211,8 @@ public class RedPedroPaths implements AutonomousPaths {
     }
 
     private PathChain buildPathFromLaunchZoneToAudienceSideLeave() {
-        FlippablePath fPath = FlippablePath.linearHeadingPath(new BezierLine(goalShootPose, startAudienceBallPickupPose),
-                goalShootPose.getHeading(), startAudienceBallPickupPose.getHeading());
+        FlippablePath fPath = FlippablePath.linearHeadingPath(new BezierLine(backGoalShootPose, startAudienceBallPickupPose),
+                backGoalShootPose.getHeading(), startAudienceBallPickupPose.getHeading());
 
         return follower.pathBuilder()
             .addPath(fPath)
@@ -205,8 +220,8 @@ public class RedPedroPaths implements AutonomousPaths {
     }
 
     private PathChain buildPathFromLaunchZoneToMiddleSideLeave() {
-        FlippablePath fPath = FlippablePath.linearHeadingPath(new BezierLine(goalShootPose, startMiddleBallPickupPose),
-                goalShootPose.getHeading(), startMiddleBallPickupPose.getHeading());
+        FlippablePath fPath = FlippablePath.linearHeadingPath(new BezierLine(backGoalShootPose, startMiddleBallPickupPose),
+                backGoalShootPose.getHeading(), startMiddleBallPickupPose.getHeading());
 
         return follower.pathBuilder()
                 .addPath(fPath)
@@ -214,13 +229,23 @@ public class RedPedroPaths implements AutonomousPaths {
     }
 
     private PathChain buildPathFromLaunchZoneToGoalSideLeave() {
-        FlippablePath fPath = FlippablePath.linearHeadingPath(new BezierLine(goalShootPose, startGoalBallPickupPose),
-                goalShootPose.getHeading(), startGoalBallPickupPose.getHeading());
+        FlippablePath fPath = FlippablePath.linearHeadingPath(new BezierLine(backGoalShootPose, startGoalBallPickupPose),
+                backGoalShootPose.getHeading(), startGoalBallPickupPose.getHeading());
 
         return follower.pathBuilder()
                 .addPath(fPath)
                 .build();
     }
+
+    private PathChain buildPathFromFrontLaunchZoneToLeave() {
+        FlippablePath fPath = FlippablePath.linearHeadingPath(new BezierLine(frontGoalShootPose, startAudienceBallPickupPose),
+                frontGoalShootPose.getHeading(), startAudienceBallPickupPose.getHeading());
+
+        return follower.pathBuilder()
+                .addPath(fPath)
+                .build();
+    }
+
     /***********************************************************************************/
     @Override
     public Pose frontWallstartingPose() {
@@ -229,7 +254,7 @@ public class RedPedroPaths implements AutonomousPaths {
 
     @Override
     public Pose backWallstartingPose() {
-        return this.frontWallStartingPose;
+        return this.backGoalShootPose;
     }
 
     @Override
@@ -245,7 +270,13 @@ public class RedPedroPaths implements AutonomousPaths {
     @Override
     public PathChain pathFromBackWallToLaunchZone() {
         return pathFromBackWallToLaunchZone;
-    }    /***********************************************************************************/
+    }
+
+    @Override
+    public PathChain pathFromFrontWallToFrontLaunchZone() {
+        return pathFromFrontWallToFrontLaunchZone;
+    }
+    /***********************************************************************************/
 
     @Override
     public PathChain pathFromLaunchZoneToAudienceSideBallPickup() {
@@ -308,5 +339,10 @@ public class RedPedroPaths implements AutonomousPaths {
     @Override
     public PathChain pathFromLaunchZoneToGoalSideLeave() {
         return pathFromLaunchZoneToGoalSideLeave;
+    }
+
+    @Override
+    public PathChain pathFromFrontLaunchZoneToLeave() {
+        return pathFromFrontLaunchZoneToLeave;
     }
 }

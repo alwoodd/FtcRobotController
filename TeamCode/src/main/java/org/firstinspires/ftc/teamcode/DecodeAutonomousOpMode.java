@@ -4,12 +4,14 @@ import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.PathChain;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroPathFollower;
 import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroPathTelemetry;
 
 @Autonomous(name = "Autonomous")
+@Disabled
 public class DecodeAutonomousOpMode extends LinearOpMode {
     private double currentMaxPower, defaultMaxPower;
     private final double maxMaxPower = 1;
@@ -19,7 +21,7 @@ public class DecodeAutonomousOpMode extends LinearOpMode {
     private final double ballPickupPower = .2;
     private AllianceColor selectedColor = AllianceColor.RED;
     private BallSpikeLocation ballSpikeLocation = BallSpikeLocation.AUDIENCE_SIDE;
-    private StartLocation startLocation = StartLocation.FRONT;
+    private FrontBackLocation startLocation = FrontBackLocation.FRONT;
     private AutonomousPaths pedroPaths;
 
     private Pose startingPose;
@@ -93,7 +95,7 @@ public class DecodeAutonomousOpMode extends LinearOpMode {
     }
 
     private void setStartLocation() {
-        if (startLocation == StartLocation.FRONT) {
+        if (startLocation == FrontBackLocation.FRONT) {
             pathFromStartToLaunchZone = pedroPaths.pathFromFrontWallToLaunchZone();
             startingPose = pedroPaths.frontWallstartingPose();
         }
@@ -153,7 +155,7 @@ public class DecodeAutonomousOpMode extends LinearOpMode {
 
             selectedColor = AllianceColor.INSTANCE.toggleColor(gamepad1.rightBumperWasPressed(), selectedColor);
             ballSpikeLocation = BallSpikeLocation.INSTANCE.toggleLocation(gamepad1.leftBumperWasPressed(), ballSpikeLocation);
-            startLocation = StartLocation.INSTANCE.toggleLocation(gamepad1.yWasPressed(), startLocation);
+            startLocation = FrontBackLocation.INSTANCE.toggleLocation(gamepad1.yWasPressed(), startLocation);
             toggleMaxPower(gamepad1.xWasPressed());
         }
     }

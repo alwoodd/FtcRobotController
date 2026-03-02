@@ -1,6 +1,6 @@
 package org.firstinspires.ftc.teamcode;
 
-public enum StartLocation {
+public enum FrontBackLocation {
     FRONT,
     BACK,
     INSTANCE;
@@ -11,13 +11,13 @@ public enum StartLocation {
      * @param currentLocation what the caller considers the current location
      * @return BallSpikeLocation AUDIENCE_SIDE, MIDDLE, or GOAL_SIDE
      */
-    public StartLocation toggleLocation(boolean buttonPressed, StartLocation currentLocation) {
+    public FrontBackLocation toggleLocation(boolean buttonPressed, FrontBackLocation currentLocation) {
         if (buttonPressed) {
-            if (currentLocation == StartLocation.FRONT) {
-                currentLocation = StartLocation.BACK;
+            if (currentLocation == FrontBackLocation.FRONT) {
+                currentLocation = FrontBackLocation.BACK;
             }
             else {
-                currentLocation = StartLocation.FRONT;
+                currentLocation = FrontBackLocation.FRONT;
             }
         }
 

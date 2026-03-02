@@ -53,7 +53,7 @@ public class PedroPathConfiguration {
     }
 
     private FollowerConstants buildFollowerConstants() {
-        return new FollowerConstants()
+        FollowerConstants followerConstants = new FollowerConstants()
             .mass(4.54)                          //Kilograms
             .forwardZeroPowerAcceleration(-33)
             .lateralZeroPowerAcceleration(-48.24)
@@ -61,11 +61,14 @@ public class PedroPathConfiguration {
             .translationalPIDFCoefficients(new PIDFCoefficients(.025,0,0,.019))
             .drivePIDFCoefficients(new FilteredPIDFCoefficients(0, 0, 0, .6, .15))
             .centripetalScaling(.0004);
+
+        //followerConstants.setTurnHeadingErrorThreshold(.05);
+        return followerConstants;
     }
 
     private MecanumConstants buildMecanumConstants() {
         return new MecanumConstants()
-            .maxPower(.6)
+            .maxPower(.8)
             .leftFrontMotorName("leftFront")
             .leftRearMotorName("leftRear")
             .rightFrontMotorName("rightFront")

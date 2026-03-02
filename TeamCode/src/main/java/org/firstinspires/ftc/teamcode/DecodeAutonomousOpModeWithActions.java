@@ -28,7 +28,7 @@ public class DecodeAutonomousOpModeWithActions extends LinearOpMode {
     private final double maxMaxPower = 1;
     private AllianceColor selectedColor = AllianceColor.RED;
     private BallSpikeLocation ballSpikeLocation = BallSpikeLocation.GOAL_SIDE;
-    private StartLocation startLocation = StartLocation.FRONT;
+    private FrontBackLocation startLocation = FrontBackLocation.FRONT;
     private int pathState = 0;
     private RobotHardware robot;
     private AutonomousPaths pedroPaths;
@@ -60,7 +60,8 @@ public class DecodeAutonomousOpModeWithActions extends LinearOpMode {
         pedroTelemetry = new PedroPathTelemetry(telemetry, follower, selectedColor);
         PedroTeleopData.allianceColor = selectedColor;
 
-        follower.setStartingPose(pedroPaths.frontWallstartingPose());
+        follower.setStartingPose(startLocation == FrontBackLocation.BACK ? pedroPaths.frontWallstartingPose() :
+                pedroPaths.backWallstartingPose());
 
         waitForStart();
 
@@ -174,7 +175,7 @@ public class DecodeAutonomousOpModeWithActions extends LinearOpMode {
     }
 
     private void setRobotStartLocation() {
-        if (startLocation == StartLocation.FRONT) {
+        if (startLocation == FrontBackLocation.FRONT) {
             pathFromStartToLaunchZone = pedroPaths.pathFromFrontWallToLaunchZone();
         }
         else {
@@ -220,7 +221,7 @@ public class DecodeAutonomousOpModeWithActions extends LinearOpMode {
 
             selectedColor = AllianceColor.INSTANCE.toggleColor(gamepad1.rightBumperWasPressed(), selectedColor);
             ballSpikeLocation = BallSpikeLocation.INSTANCE.toggleLocation(gamepad1.leftBumperWasPressed(), ballSpikeLocation);
-            startLocation = StartLocation.INSTANCE.toggleLocation(gamepad1.yWasPressed(), startLocation);
+            startLocation = FrontBackLocation.INSTANCE.toggleLocation(gamepad1.yWasPressed(), startLocation);
             toggleMaxPower(gamepad1.xWasPressed());
         }
     }

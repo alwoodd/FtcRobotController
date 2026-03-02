@@ -12,12 +12,14 @@ import org.firstinspires.ftc.teamcode.AllianceColor;
 public class PedroPathTelemetry {
     private final Telemetry telemetry;
     private final Follower follower;
-    private final AllianceColor currentColor;
+    private AllianceColor currentColor;
+    private final Telemetry.Item allianceColorItem;
 
     public PedroPathTelemetry(Telemetry telemetry, Follower follower, AllianceColor currentColor) {
         this.telemetry = telemetry;
         this.follower = follower;
         this.currentColor = currentColor;
+        this.allianceColorItem = telemetry.addData("Alliance", currentColor.toString());
     }
 
     /**
@@ -25,12 +27,22 @@ public class PedroPathTelemetry {
      * @param message custom message, such as "Going from wall to launch zone".
      */
     public void pathTelemetry(String message) {
-        telemetry.addData("Alliance:", currentColor.toString());
+        //telemetry.addData("Alliance", currentColor.toString());
+        allianceColorItem.setValue(currentColor.toString());
         telemetry.addLine();
         telemetry.addLine(message);
         telemetry.addData("x", follower.getPose().getX());
         telemetry.addData("y", follower.getPose().getY());
         telemetry.addData("heading", Math.toDegrees(follower.getPose().getHeading()));
         telemetry.update();
+    }
+
+    /**
+     * Set current alliance color, potentially to a different one than constructed.
+     * @param allianceColor
+     */
+    public void setAllianceColor(AllianceColor allianceColor) {
+        this.currentColor = allianceColor;
+        allianceColorItem.setValue(currentColor.toString());
     }
 }
