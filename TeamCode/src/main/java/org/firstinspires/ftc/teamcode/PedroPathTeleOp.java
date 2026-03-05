@@ -11,7 +11,6 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroPathTelemetry;
 import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroSleep;
 import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroTeleopData;
-import org.firstinspires.ftc.teamcode.teamPedroPathing.TeamPaths;
 
 import java.util.List;
 

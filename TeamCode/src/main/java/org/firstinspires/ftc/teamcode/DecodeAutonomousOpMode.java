@@ -10,7 +10,6 @@ import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroMotion;
 import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroPathTelemetry;
 import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroSleep;
 import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroTeleopData;
-import org.firstinspires.ftc.teamcode.teamPedroPathing.TeamPaths;
 
 /**
  * This OpMode demonstrates:
@@ -144,7 +143,7 @@ public class DecodeAutonomousOpMode extends LinearOpMode {
             case GOAL_SIDE:
                 startBallPickupPose = teamPaths.startGoalBallPickupPose;
                 endBallPickupPose = teamPaths.endGoalBallPickupPose;
-                leavePose = teamPaths.startMiddleBallPickupPose;
+                    leavePose = teamPaths.startMiddleBallPickupPose;
                 break;
             case MIDDLE:
                 startBallPickupPose = teamPaths.startMiddleBallPickupPose;

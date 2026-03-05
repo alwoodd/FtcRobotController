@@ -1,11 +1,12 @@
-package org.firstinspires.ftc.teamcode.teamPedroPathing;
+package org.firstinspires.ftc.teamcode;
 
 import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.math.MathFunctions;
 import com.pedropathing.paths.Path;
 
-import org.firstinspires.ftc.teamcode.AllianceColor;
+import org.firstinspires.ftc.teamcode.teamPedroPathing.HeadingInterpolationType;
+import org.firstinspires.ftc.teamcode.teamPedroPathing.PathKey;
 
 import java.util.HashMap;
 import java.util.Map;
