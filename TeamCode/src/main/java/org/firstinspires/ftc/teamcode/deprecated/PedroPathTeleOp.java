@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.experimental;
+package org.firstinspires.ftc.teamcode.deprecated;
 
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.BezierLine;
@@ -19,7 +19,7 @@ import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroTeleopData;
  * and also building and a Path to "instantly" go to the launch Pose
  * from anywhere on the field.
  */
-@TeleOp(name = "Pedro Path Teleop Ex")
+@TeleOp(name = "Pedro Path Teleop")
 public class PedroPathTeleOp extends LinearOpMode {
     enum FollowPathDestination {
         LAUNCH,
@@ -29,10 +29,12 @@ public class PedroPathTeleOp extends LinearOpMode {
     private FollowPathDestination followPathDestination;
     private Follower follower;
     private AllianceColor allianceColor;
-    private TeamPaths teamPaths;
-    private PedroPathTelemetry pedroPathTelemetry;
-    private PedroSleep pedroSleep;
 
+    private Pose launchPose;// = new Pose(90, 90, Math.toRadians(45));
+    private Pose parkPose;
+
+    PedroPathTelemetry pedroPathTelemetry;
+    PedroSleep pedroSleep;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -41,16 +43,13 @@ public class PedroPathTeleOp extends LinearOpMode {
         PedroPathConfiguration pedroPathConfiguration = new PedroPathConfiguration(this);
 
         follower = pedroPathConfiguration.getFollower();
-        follower.setStartingPose(PedroTeleopData.startingPose == null ? new Pose() : PedroTeleopData.startingPose);
-        pedroSleep = new PedroSleep(follower, 10);
+        follower.setStartingPose(PedroTeleopData.startingPose == null ? new Pose() :
+                PedroTeleopData.startingPose);
         allianceColor = PedroTeleopData.allianceColor == null ? AllianceColor.RED :
                 PedroTeleopData.allianceColor;
         pedroPathTelemetry = new PedroPathTelemetry(telemetry, follower, allianceColor);
         initSetup();
-        teamPaths = new TeamPaths(allianceColor);
-        if (PedroTeleopData.startingPose == null) {
-            follower.setStartingPose(teamPaths.frontWallStartingPose);
-        }
+        setPoses(allianceColor);
 
         follower.startTeleOpDrive(); //This calls update() as well.
         waitForStart();
@@ -70,8 +69,8 @@ public class PedroPathTeleOp extends LinearOpMode {
              * If that Path is complete (not isBusy()), performPathEndActions(),
              * then re-startTeleOpDrive().
              */
+
             else if (!follower.isBusy()) {
-                fineTuneHeading();
                 performPathEndActions();
                 follower.startTeleOpDrive();
             }
@@ -88,14 +87,6 @@ public class PedroPathTeleOp extends LinearOpMode {
                 pedroMessage = toggleFollowPath(fromHereToPark(), FollowPathDestination.PARK);
             }
         }
-    }
-
-    /**
-     * Give the follower a few more updates.
-     */
-    private void fineTuneHeading() {
-        pedroPathTelemetry.pathTelemetry("Fine Tune Heading");
-        pedroSleep.sleep(500);
     }
 
     /**
@@ -151,8 +142,8 @@ public class PedroPathTeleOp extends LinearOpMode {
         Pose herePose = follower.getPose();
 
         return follower.pathBuilder()
-            .addPath(new BezierLine(herePose, teamPaths.backGoalShootPose))
-            .setLinearHeadingInterpolation(herePose.getHeading(), teamPaths.backGoalShootPose.getHeading())
+            .addPath(new BezierLine(herePose, launchPose))
+            .setLinearHeadingInterpolation(herePose.getHeading(), launchPose.getHeading())
             .build();
     }
 
@@ -165,9 +156,21 @@ public class PedroPathTeleOp extends LinearOpMode {
         Pose herePose = follower.getPose();
 
         return follower.pathBuilder()
-            .addPath(new BezierLine(herePose, teamPaths.parkPose))
-            .setLinearHeadingInterpolation(herePose.getHeading(), teamPaths.parkPose.getHeading())
+            .addPath(new BezierLine(herePose, parkPose))
+            .setLinearHeadingInterpolation(herePose.getHeading(), parkPose.getHeading())
             .build();
+    }
+
+    /**
+     * Set required fixed Poses, using the red or blue AutonomousPaths.
+     * @param allianceColor AllianceColor
+     */
+    private void setPoses(AllianceColor allianceColor) {
+        AutonomousPaths paths = (allianceColor == AllianceColor.RED) ?
+            new RedPedroPaths(follower) : new BluePedroPaths(follower, new RedPedroPaths(follower));
+
+        launchPose = paths.pathFromBackWallToLaunchZone().endPose();
+        parkPose = paths.parkPose();
     }
 
     /**
@@ -178,12 +181,7 @@ public class PedroPathTeleOp extends LinearOpMode {
         pedroPathTelemetry.pathTelemetry("Initialize Setup");
 
         telemetry.addLine("Press Right Bumper to toggle between Red and Blue alliance.");
-        Telemetry.Item allianceColorItem = telemetry.addData(allianceColor.toString(), " currently selected");
-        if (PedroTeleopData.startingPose == null) {
-            telemetry.addLine();
-            telemetry.addLine("Starting Pose not set during Autonomous");
-            telemetry.addLine("Defaulting to audience-side start Pose");
-        }
+        Telemetry.Item allianceColorItem = telemetry.addData(allianceColor.toString(), " currently selected");;
 
         while (opModeInInit()) {
             allianceColorItem.setCaption(allianceColor.toString());

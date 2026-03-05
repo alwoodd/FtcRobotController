@@ -1,11 +1,9 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.deprecated;
 
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.math.MathFunctions;
 import com.pedropathing.paths.PathChain;
-
-import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroPathFlipper;
 
 public class BluePedroPaths implements AutonomousPaths {
     private final AutonomousPaths redPedroPaths;

@@ -11,64 +11,102 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroPathTelemetry;
 import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroSleep;
 import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroTeleopData;
+import org.firstinspires.ftc.teamcode.teamPedroPathing.TeamPaths;
+
+import java.util.List;
 
 /**
  * This OpMode demonstrates using Pedro Pathing for teleOp,
  * and also building and a Path to "instantly" go to the launch Pose
  * from anywhere on the field.
  */
-@TeleOp(name = "Pedro Path Teleop")
+@TeleOp(name = "Pedro Path Teleop Ex")
 public class PedroPathTeleOp extends LinearOpMode {
     enum FollowPathDestination {
         LAUNCH,
         PARK,
         NONE
     }
+    static class ShooterSpeed {
+        final double speed;
+        final String speedDescription;
+        ShooterSpeed(double speed, String speedDescription) {
+            this.speed = speed;
+            this. speedDescription = speedDescription;
+        }
+    }
+    static class ShooterSpeeds {
+        private final List<ShooterSpeed> shooterSpeeds;
+        private int index = 0;
+
+        ShooterSpeeds(ShooterSpeed... speeds) {
+            this.shooterSpeeds = List.of(speeds);
+        }
+
+        ShooterSpeed getFirst() {
+            index = 0;
+            return shooterSpeeds.get(index);
+        }
+
+        ShooterSpeed next() {
+            index = (index + 1) % shooterSpeeds.size();
+            return shooterSpeeds.get(index);
+        }
+    }
+
     private FollowPathDestination followPathDestination;
     private Follower follower;
     private AllianceColor allianceColor;
-
-    private Pose launchPose;// = new Pose(90, 90, Math.toRadians(45));
-    private Pose parkPose;
-
-    PedroPathTelemetry pedroPathTelemetry;
-    PedroSleep pedroSleep;
+    private TeamPaths teamPaths;
+    private PedroPathTelemetry pedroPathTelemetry;
+    private PedroSleep pedroSleep;
 
     @Override
     public void runOpMode() throws InterruptedException {
         //RobotHardware robot = new RobotHardware(this);
 
+        ShooterSpeeds shooterSpeeds = new ShooterSpeeds(
+                new ShooterSpeed(.2, "Low"),
+                new ShooterSpeed(.5, "Middlin'"),
+                new ShooterSpeed(1, "Full Blast")
+        );
+
         PedroPathConfiguration pedroPathConfiguration = new PedroPathConfiguration(this);
 
         follower = pedroPathConfiguration.getFollower();
-        follower.setStartingPose(PedroTeleopData.startingPose == null ? new Pose() :
-                PedroTeleopData.startingPose);
+        follower.setStartingPose(PedroTeleopData.startingPose == null ? new Pose() : PedroTeleopData.startingPose);
+        pedroSleep = new PedroSleep(follower, 10);
         allianceColor = PedroTeleopData.allianceColor == null ? AllianceColor.RED :
                 PedroTeleopData.allianceColor;
         pedroPathTelemetry = new PedroPathTelemetry(telemetry, follower, allianceColor);
         initSetup();
-        setPoses(allianceColor);
+        teamPaths = new TeamPaths(allianceColor);
+        if (PedroTeleopData.startingPose == null) {
+            follower.setStartingPose(teamPaths.frontWallStartingPose);
+        }
+
+        ShooterSpeed currentShooterSpeed = shooterSpeeds.getFirst();
+        String pedroMessage = "Current shooter speed is " + currentShooterSpeed.speedDescription;
 
         follower.startTeleOpDrive(); //This calls update() as well.
         waitForStart();
 
         //The follower can be either in startTeleOpDrive() or followPath().
-        String pedroMessage = "";
-        while(opModeIsActive()) {
+        while (opModeIsActive()) {
             follower.update();
             pedroPathTelemetry.pathTelemetry(pedroMessage);
 
             //Call setTeleOpDrive() as long as isTeleopDrive().
             if (follower.isTeleopDrive()) {
                 follower.setTeleOpDrive(-gamepad1.left_stick_y, -gamepad1.left_stick_x, -gamepad1.right_stick_x, true);
-                pedroMessage = "TeleOp Mode";
+                //pedroMessage = "TeleOp Mode";
             }
              /* If not isTeleopDrive(), then we might still be following a Path.
              * If that Path is complete (not isBusy()), performPathEndActions(),
              * then re-startTeleOpDrive().
              */
-
             else if (!follower.isBusy()) {
+                fineTuneHeading();
                 performPathEndActions();
                 follower.startTeleOpDrive();
             }
@@ -84,7 +122,27 @@ public class PedroPathTeleOp extends LinearOpMode {
             if (gamepad1.aWasPressed()) {
                 pedroMessage = toggleFollowPath(fromHereToPark(), FollowPathDestination.PARK);
             }
+
+            if (gamepad1.b) {
+                //robot.shoot(currentShooterSpeed.speed);
+            }
+            else {
+                //robot.shoot(0);
+            }
+
+            if (gamepad1.rightBumperWasPressed()) {
+                currentShooterSpeed = shooterSpeeds.next();
+                pedroMessage = "Current shooter speed is " + currentShooterSpeed.speedDescription;
+            }
         }
+    }
+
+    /**
+     * Give the follower a few more updates.
+     */
+    private void fineTuneHeading() {
+        pedroPathTelemetry.pathTelemetry("Fine Tune Heading");
+        pedroSleep.sleep(500);
     }
 
     /**
@@ -140,8 +198,8 @@ public class PedroPathTeleOp extends LinearOpMode {
         Pose herePose = follower.getPose();
 
         return follower.pathBuilder()
-            .addPath(new BezierLine(herePose, launchPose))
-            .setLinearHeadingInterpolation(herePose.getHeading(), launchPose.getHeading())
+            .addPath(new BezierLine(herePose, teamPaths.backGoalShootPose))
+            .setLinearHeadingInterpolation(herePose.getHeading(), teamPaths.backGoalShootPose.getHeading())
             .build();
     }
 
@@ -154,21 +212,9 @@ public class PedroPathTeleOp extends LinearOpMode {
         Pose herePose = follower.getPose();
 
         return follower.pathBuilder()
-            .addPath(new BezierLine(herePose, parkPose))
-            .setLinearHeadingInterpolation(herePose.getHeading(), parkPose.getHeading())
+            .addPath(new BezierLine(herePose, teamPaths.parkPose))
+            .setLinearHeadingInterpolation(herePose.getHeading(), teamPaths.parkPose.getHeading())
             .build();
-    }
-
-    /**
-     * Set required fixed Poses, using the red or blue AutonomousPaths.
-     * @param allianceColor AllianceColor
-     */
-    private void setPoses(AllianceColor allianceColor) {
-        AutonomousPaths paths = (allianceColor == AllianceColor.RED) ?
-            new RedPedroPaths(follower) : new BluePedroPaths(follower, new RedPedroPaths(follower));
-
-        launchPose = paths.pathFromBackWallToLaunchZone().endPose();
-        parkPose = paths.parkPose();
     }
 
     /**
@@ -179,7 +225,12 @@ public class PedroPathTeleOp extends LinearOpMode {
         pedroPathTelemetry.pathTelemetry("Initialize Setup");
 
         telemetry.addLine("Press Right Bumper to toggle between Red and Blue alliance.");
-        Telemetry.Item allianceColorItem = telemetry.addData(allianceColor.toString(), " currently selected");;
+        Telemetry.Item allianceColorItem = telemetry.addData(allianceColor.toString(), " currently selected");
+        if (PedroTeleopData.startingPose == null) {
+            telemetry.addLine();
+            telemetry.addLine("Starting Pose not set during Autonomous");
+            telemetry.addLine("Defaulting to audience-side start Pose");
+        }
 
         while (opModeInInit()) {
             allianceColorItem.setCaption(allianceColor.toString());

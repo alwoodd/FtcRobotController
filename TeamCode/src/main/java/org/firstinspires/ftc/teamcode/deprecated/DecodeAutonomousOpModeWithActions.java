@@ -1,26 +1,18 @@
-package org.firstinspires.ftc.teamcode.experimental;
+package org.firstinspires.ftc.teamcode.deprecated;
 
 import com.pedropathing.follower.Follower;
 import com.pedropathing.paths.PathChain;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.firstinspires.ftc.teamcode.AllianceColor;
-import org.firstinspires.ftc.teamcode.deprecated.AutonomousPaths;
 import org.firstinspires.ftc.teamcode.BallSpikeLocation;
-import org.firstinspires.ftc.teamcode.deprecated.BluePedroPaths;
 import org.firstinspires.ftc.teamcode.FrontBackLocation;
 import org.firstinspires.ftc.teamcode.PedroPathConfiguration;
-import org.firstinspires.ftc.teamcode.deprecated.RedPedroPaths;
 import org.firstinspires.ftc.teamcode.RobotHardware;
 import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroPathTelemetry;
 import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroSleep;
 import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroTeleopData;
-
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 
 /**
  * This OpMode demonstrates:
@@ -29,19 +21,8 @@ import java.util.List;
  * -A way to flexibly set a start Pose on a configured teleOp class, to its configured
  *  static field the teleOp class uses for its start Pose.
  */
-@Autonomous(name = "Autonomous with named actions")
-@Disabled
-public class DecodeAutonomousOpModeWithNamedActions extends LinearOpMode {
-    enum ActionStep {
-        WALL_TO_LAUNCH,
-        LAUNCH_TO_BALL_PICKUP,
-        START_TO_END_BALL_PICKUP,
-        BALL_PICKUP_TO_LAUNCH,
-        LAUNCH_TO_LEAVE,
-        SHOOT_TO_LEAVE,
-        DONE
-    }
-
+@Autonomous(name = "Autonomous with actions")
+public class DecodeAutonomousOpModeWithActions extends LinearOpMode {
     private PedroPathTelemetry pedroTelemetry;
     private Follower follower;
     private final double ballPickupPower = .3;
@@ -50,13 +31,7 @@ public class DecodeAutonomousOpModeWithNamedActions extends LinearOpMode {
     private AllianceColor selectedColor = AllianceColor.RED;
     private BallSpikeLocation ballSpikeLocation = BallSpikeLocation.GOAL_SIDE;
     private FrontBackLocation startLocation = FrontBackLocation.FRONT;
-    //private FrontBackLocation launchLocation = FrontBackLocation.BACK;
-
-    private List<ActionStep> actionSteps;
-    private Iterator<ActionStep> actionStepIterator;
-    private ActionStep currentStep;
-    //private int pathState = 0;
-
+    private int pathState = 0;
     private RobotHardware robot;
     private AutonomousPaths pedroPaths;
     private PedroSleep pedroSleep;
@@ -83,14 +58,13 @@ public class DecodeAutonomousOpModeWithNamedActions extends LinearOpMode {
 
         pedroPaths = createPedroPaths(selectedColor);
         setBallSpikeLocationPaths();
-        setRobotStartPath();
+        setRobotStartLocation();
         pedroTelemetry = new PedroPathTelemetry(telemetry, follower, selectedColor);
         PedroTeleopData.allianceColor = selectedColor;
 
-        follower.setStartingPose(pedroPaths.frontWallstartingPose());
+        follower.setStartingPose(startLocation == FrontBackLocation.BACK ? pedroPaths.frontWallstartingPose() :
+                pedroPaths.backWallstartingPose());
 
-        actionStepIterator = actionSteps.iterator();
-        currentStep = actionStepIterator.next();
         waitForStart();
 
         boolean done;
@@ -115,53 +89,47 @@ public class DecodeAutonomousOpModeWithNamedActions extends LinearOpMode {
 
     private boolean performActions() {
         boolean done = false;
-        switch (currentStep) {
-            case WALL_TO_LAUNCH:
+        switch (pathState) {
+            case 0:
                 if (!follower.isBusy()) {
                     pedroMessage = "Going from wall to launch zone";
                     follower.followPath(pathFromStartToLaunchZone);
-                    //pathState++;
-                    currentStep = actionStepIterator.next();
+                    pathState++;
                 }
                 break;
-            case LAUNCH_TO_BALL_PICKUP:
+            case 1:
                 if (!follower.isBusy()) {
+                    //follower.holdPoint(pathFromStartToLaunchZone.lastPath().getFirstControlPoint());
                     shootBalls();
                     pedroMessage = "Going from launch zone to ball pickup";
                     follower.followPath(pathFromLaunchZoneToStartBallPickup);
-                    //pathState++;
+                    pathState++;
                 }
                 break;
-            case START_TO_END_BALL_PICKUP:
+            case 2:
                 if (!follower.isBusy()) {
                     ballPickup();
                     pedroMessage = "Picking up balls";
                     follower.followPath(pathFromStartBallPickupToEndBallPickup, ballPickupPower, true);
-                    //pathState++;
+                    pathState++;
                 }
                 break;
-            case BALL_PICKUP_TO_LAUNCH:
+            case 3:
                 if (!follower.isBusy()) {
                     pedroMessage = "Going from ball pickup to launch zone";
                     follower.followPath(pathFromEndBallPickupToLaunchZone);
-                    //pathState++;
+                    pathState++;
                 }
                 break;
-            case LAUNCH_TO_LEAVE:
+            case 4:
                 if (!follower.isBusy()) {
                     shootBalls();
                     pedroMessage = "Leaving";
                     follower.followPath(pathFromLaunchZoneToLeave);
-                    //pathState++;
+                    pathState++;
                 }
                 break;
-            case SHOOT_TO_LEAVE:
-                if (!follower.isBusy()) {
-                    pedroMessage = "Leaving";
-                    //???follower.followPath();
-                }
-                break;
-            case DONE:
+            case 5:
                 if (!follower.isBusy()) {
                     done = true;
                 }
@@ -205,36 +173,17 @@ public class DecodeAutonomousOpModeWithNamedActions extends LinearOpMode {
                 pathFromEndBallPickupToLaunchZone = pedroPaths.pathFromGoalSideEndBallPickupToLaunchZone();
                 pathFromLaunchZoneToLeave = pedroPaths.pathFromLaunchZoneToGoalSideLeave();
                 break;
-            case NONE:
-                pathFromLaunchZoneToLeave = pedroPaths.pathFromFrontLaunchZoneToLeave();
-                break;
         }
     }
 
-    private void setRobotStartPath() {
-        if (ballSpikeLocation != BallSpikeLocation.NONE) {
-            if (startLocation == FrontBackLocation.FRONT) {
-                pathFromStartToLaunchZone = pedroPaths.pathFromFrontWallToLaunchZone();
-            }
-            else {
-                pathFromStartToLaunchZone = pedroPaths.pathFromBackWallToLaunchZone();
-            }
-        }
-        else {
-            pathFromStartToLaunchZone = pedroPaths.pathFromFrontWallToFrontLaunchZone();
-        }
-    }
-
-/*
-    private void setRobotLaunchLocation() {
-        if (launchLocation == FrontBackLocation.FRONT) {
+    private void setRobotStartLocation() {
+        if (startLocation == FrontBackLocation.FRONT) {
             pathFromStartToLaunchZone = pedroPaths.pathFromFrontWallToLaunchZone();
         }
         else {
             pathFromStartToLaunchZone = pedroPaths.pathFromBackWallToLaunchZone();
         }
     }
-*/
 
     /**
      * Depending on the passed selectedColor, instantiate and return either a
@@ -259,44 +208,24 @@ public class DecodeAutonomousOpModeWithNamedActions extends LinearOpMode {
     private void initSetup() {
         while (opModeInInit()) {
             telemetry.addLine("Press Right Bumper to toggle between Red and Blue alliance.");
+            //telemetry.addLine("Press Right Bumper to confirm selection.");
             telemetry.addData(selectedColor.toString(), " currently selected");
-            telemetry.addLine();
-            telemetry.addLine("Press Y to toggle START between Front and Back");
-            telemetry.addData(startLocation.toString(), "currently selected");
-/*
-            telemetry.addLine();
-            telemetry.addLine("Press A to toggle LAUNCH between Front and Back");
-            telemetry.addData(launchLocation.toString(), "currently selected");
-*/
             telemetry.addLine();
             telemetry.addLine("Press Left Bumper to toggle set ball pickup location");
             telemetry.addData(ballSpikeLocation.toString(), " currently selected");
-
+            telemetry.addLine();
+            telemetry.addLine("Press Y to toggle start between Front and Back");
+            telemetry.addData(String.valueOf(startLocation.toString()), "currently selected");
             telemetry.addLine();
             telemetry.addLine("Press X to toggle max speed between " + defaultMaxPower + " and " + maxMaxPower);
             telemetry.addData(String.valueOf(currentMaxPower), "currently selected");
-
             telemetry.update();
 
             selectedColor = AllianceColor.INSTANCE.toggleColor(gamepad1.rightBumperWasPressed(), selectedColor);
             ballSpikeLocation = BallSpikeLocation.INSTANCE.toggleLocation(gamepad1.leftBumperWasPressed(), ballSpikeLocation);
             startLocation = FrontBackLocation.INSTANCE.toggleLocation(gamepad1.yWasPressed(), startLocation);
-//            launchLocation = FrontBackLocation.INSTANCE.toggleLocation(gamepad1.aWasPressed(), launchLocation);
             toggleMaxPower(gamepad1.xWasPressed());
         }
-
-        actionSteps = new ArrayList<>();
-        actionSteps.add(ActionStep.WALL_TO_LAUNCH);
-        if (ballSpikeLocation != BallSpikeLocation.NONE) {
-            actionSteps.add(ActionStep.LAUNCH_TO_BALL_PICKUP);
-            actionSteps.add(ActionStep.START_TO_END_BALL_PICKUP);
-            actionSteps.add(ActionStep.BALL_PICKUP_TO_LAUNCH);
-            actionSteps.add(ActionStep.LAUNCH_TO_LEAVE);
-        }
-        else {
-            actionSteps.add(ActionStep.SHOOT_TO_LEAVE);
-        }
-        actionSteps.add(ActionStep.DONE);
     }
 
     /**

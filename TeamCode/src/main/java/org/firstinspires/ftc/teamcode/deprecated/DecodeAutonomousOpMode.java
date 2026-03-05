@@ -1,54 +1,52 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.deprecated;
 
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.PathChain;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
+import org.firstinspires.ftc.teamcode.AllianceColor;
+import org.firstinspires.ftc.teamcode.BallSpikeLocation;
+import org.firstinspires.ftc.teamcode.FrontBackLocation;
+import org.firstinspires.ftc.teamcode.PedroPathConfiguration;
+import org.firstinspires.ftc.teamcode.RobotHardware;
 import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroPathTelemetry;
-import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroSleep;
-import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroTeleopData;
 
-import java.lang.reflect.Field;
-
-/**
- * This OpMode demonstrates:
- * -Running the OpMode in a loop (while(opModeIsActive()).
- * -Using a state machine to control actions to be performed during each iteration.
- * -A way to flexibly set a start Pose on a configured teleOp class, to its configured
- *  static field the teleOp class uses for its start Pose.
- */
-@Autonomous(name = "Autonomous with actions")
-public class DecodeAutonomousOpModeWithActions extends LinearOpMode {
-    private PedroPathTelemetry pedroTelemetry;
-    private Follower follower;
-    private final double ballPickupPower = .3;
+@Autonomous(name = "Autonomous")
+@Disabled
+public class DecodeAutonomousOpMode extends LinearOpMode {
     private double currentMaxPower, defaultMaxPower;
     private final double maxMaxPower = 1;
-    private AllianceColor selectedColor = AllianceColor.RED;
-    private BallSpikeLocation ballSpikeLocation = BallSpikeLocation.GOAL_SIDE;
-    private FrontBackLocation startLocation = FrontBackLocation.FRONT;
-    private int pathState = 0;
-    private RobotHardware robot;
-    private AutonomousPaths pedroPaths;
-    private PedroSleep pedroSleep;
 
+    private PedroPathTelemetry pedroTelemetry;
+    private Follower follower;
+    private final double ballPickupPower = .2;
+    private AllianceColor selectedColor = AllianceColor.RED;
+    private BallSpikeLocation ballSpikeLocation = BallSpikeLocation.AUDIENCE_SIDE;
+    private FrontBackLocation startLocation = FrontBackLocation.FRONT;
+    private AutonomousPaths pedroPaths;
+
+    private Pose startingPose;
     private PathChain pathFromStartToLaunchZone;
     private PathChain pathFromLaunchZoneToStartBallPickup;
     private PathChain pathFromStartBallPickupToEndBallPickup;
     private PathChain pathFromEndBallPickupToLaunchZone;
     private PathChain pathFromLaunchZoneToLeave;
 
-    private String pedroMessage = "NO MESSAGE";
-
     @Override
     public void runOpMode() throws InterruptedException {
-        robot = new RobotHardware(this);
-        PedroPathConfiguration pedroPathConfiguration = new PedroPathConfiguration(this);
-        follower = pedroPathConfiguration.getFollower();
-        pedroSleep = new PedroSleep(follower);
+        RobotHardware robot = new RobotHardware(this);
 
+        PedroPathConfiguration pedroPathConfiguration = new PedroPathConfiguration(this);
+
+        follower = pedroPathConfiguration.getFollower();
+
+        /*
+         * This block, along with toggleMaxPower(), shows one way to toggle max power for the run
+         * between 2 powers.
+         */
         defaultMaxPower = follower.getMaxPowerScaling();
         currentMaxPower = defaultMaxPower;
         initSetup();
@@ -56,96 +54,22 @@ public class DecodeAutonomousOpModeWithActions extends LinearOpMode {
 
         pedroPaths = createPedroPaths(selectedColor);
         setBallSpikeLocationPaths();
-        setRobotStartLocation();
+        setStartLocation();
         pedroTelemetry = new PedroPathTelemetry(telemetry, follower, selectedColor);
-        PedroTeleopData.allianceColor = selectedColor;
-
-        follower.setStartingPose(startLocation == FrontBackLocation.BACK ? pedroPaths.frontWallstartingPose() :
-                pedroPaths.backWallstartingPose());
+        PedroPathFollower pedroPathFollower = new PedroPathFollower(this, follower, pedroTelemetry, startingPose);
 
         waitForStart();
 
-        boolean done;
-        while (opModeIsActive()) {
-            follower.update();
-            done = performActions();
-            pedroTelemetry.pathTelemetry(pedroMessage);
-            if (done) break;
-/*
-            telemetry.addLine();
-            RobotHardware.SpinnerVelocities spinnerVelocities = robot.getSpinnerVelocities();
-            telemetry.addData("Left Spinner Velocity", spinnerVelocities.left);
-            telemetry.addData("Right Spinner Velocity", spinnerVelocities.right);
-            telemetry.setAutoClear(false); //Add above telemetry to pedroTelemetry.
-            telemetry.update();
-            telemetry.setAutoClear(true);
-*/
+        if (opModeIsActive()) {
+            pedroPathFollower.followPathChain(pathFromStartToLaunchZone, "Going from wall to launch zone");
+            shootBalls();
+            pedroPathFollower.followPathChain(pathFromLaunchZoneToStartBallPickup, "Going from launch zone to ball pickup");
+            ballPickup();
+            pedroPathFollower.followPathChain(pathFromStartBallPickupToEndBallPickup, ballPickupPower, "Picking up balls");
+            pedroPathFollower.followPathChain(pathFromEndBallPickupToLaunchZone, "Going from ball pickup to launch zone");
+            shootBalls();
+            pedroPathFollower.followPathChain(pathFromLaunchZoneToLeave, "Leaving");
         }
-
-        PedroTeleopData.startingPose = follower.getPose();
-    }
-
-    private boolean performActions() {
-        boolean done = false;
-        switch (pathState) {
-            case 0:
-                if (!follower.isBusy()) {
-                    pedroMessage = "Going from wall to launch zone";
-                    follower.followPath(pathFromStartToLaunchZone);
-                    pathState++;
-                }
-                break;
-            case 1:
-                if (!follower.isBusy()) {
-                    //follower.holdPoint(pathFromStartToLaunchZone.lastPath().getFirstControlPoint());
-                    shootBalls();
-                    pedroMessage = "Going from launch zone to ball pickup";
-                    follower.followPath(pathFromLaunchZoneToStartBallPickup);
-                    pathState++;
-                }
-                break;
-            case 2:
-                if (!follower.isBusy()) {
-                    ballPickup();
-                    pedroMessage = "Picking up balls";
-                    follower.followPath(pathFromStartBallPickupToEndBallPickup, ballPickupPower, true);
-                    pathState++;
-                }
-                break;
-            case 3:
-                if (!follower.isBusy()) {
-                    pedroMessage = "Going from ball pickup to launch zone";
-                    follower.followPath(pathFromEndBallPickupToLaunchZone);
-                    pathState++;
-                }
-                break;
-            case 4:
-                if (!follower.isBusy()) {
-                    shootBalls();
-                    pedroMessage = "Leaving";
-                    follower.followPath(pathFromLaunchZoneToLeave);
-                    pathState++;
-                }
-                break;
-            case 5:
-                if (!follower.isBusy()) {
-                    done = true;
-                }
-                break;
-        }
-        return done;
-    }
-
-    //Emulate shooting balls.
-    private void shootBalls(){
-        pedroTelemetry.pathTelemetry("Shooting balls.");
-        pedroSleep.sleep(3000);
-    }
-
-    //Emulate pickup up balls.
-    private void ballPickup(){
-        pedroTelemetry.pathTelemetry("Ball scooper turned on.");
-        pedroSleep.sleep(2000);
     }
 
     /**
@@ -174,19 +98,21 @@ public class DecodeAutonomousOpModeWithActions extends LinearOpMode {
         }
     }
 
-    private void setRobotStartLocation() {
+    private void setStartLocation() {
         if (startLocation == FrontBackLocation.FRONT) {
             pathFromStartToLaunchZone = pedroPaths.pathFromFrontWallToLaunchZone();
+            startingPose = pedroPaths.frontWallstartingPose();
         }
         else {
             pathFromStartToLaunchZone = pedroPaths.pathFromBackWallToLaunchZone();
+            startingPose = pedroPaths.backWallstartingPose();
         }
     }
 
     /**
      * Depending on the passed selectedColor, instantiate and return either a
      * RedPedroPathsFrontWall or BluePedroPathsFrontWall.
-     * Both implement the AutonomousPedroPathsFrontWall interface.
+     * Both implement the AutonomousPathsFrontWall interface.
      * @param selectedColor RED or BLUE
      * @return AutonomousPedroPathsFrontWall
      */
@@ -199,21 +125,33 @@ public class DecodeAutonomousOpModeWithActions extends LinearOpMode {
         }
     }
 
+    //Emulate shooting balls.
+    private void shootBalls(){
+        pedroTelemetry.pathTelemetry("Shooting balls.");
+        sleep(4000);
+    }
+
+    //Emulate pickup up balls.
+    private void ballPickup(){
+        pedroTelemetry.pathTelemetry("Ball scooper turned on.");
+        sleep(2000);
+    }
+
     /**
-     * Call AllianceColor.INSTANCE.toggleColor(), BallSpikeLocation.INSTANCE.toggleLocation(),
-     * and toggleMaxPower() as long as opModeInInit().
+     * Perform pre-start initializations as long as opModeInInit().
+     * Get the AllianceColor, and target BallSpikeLocation.
+     * Also toggleMaxPower().
      */
     private void initSetup() {
         while (opModeInInit()) {
             telemetry.addLine("Press Right Bumper to toggle between Red and Blue alliance.");
-            //telemetry.addLine("Press Right Bumper to confirm selection.");
             telemetry.addData(selectedColor.toString(), " currently selected");
             telemetry.addLine();
             telemetry.addLine("Press Left Bumper to toggle set ball pickup location");
             telemetry.addData(ballSpikeLocation.toString(), " currently selected");
             telemetry.addLine();
-            telemetry.addLine("Press Y to toggle start between Front and Back");
-            telemetry.addData(String.valueOf(startLocation.toString()), "currently selected");
+            telemetry.addLine("Press Y to toggle between Front and Back starting location");
+            telemetry.addData(ballSpikeLocation.toString(), " currently selected");
             telemetry.addLine();
             telemetry.addLine("Press X to toggle max speed between " + defaultMaxPower + " and " + maxMaxPower);
             telemetry.addData(String.valueOf(currentMaxPower), "currently selected");

@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.teamPedroPathing;
+package org.firstinspires.ftc.teamcode.deprecated;
 
 import com.pedropathing.geometry.BezierCurve;
 import com.pedropathing.geometry.BezierLine;

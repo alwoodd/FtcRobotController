@@ -1,11 +1,11 @@
-package org.firstinspires.ftc.teamcode.teamPedroPathing;
+package org.firstinspires.ftc.teamcode.deprecated;
 
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.PathChain;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
-import org.firstinspires.ftc.robotcore.external.Telemetry;
+import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroPathTelemetry;
 
 /**
  * This class provides a convenient and standard way to tell the Follower which Path to follow,
