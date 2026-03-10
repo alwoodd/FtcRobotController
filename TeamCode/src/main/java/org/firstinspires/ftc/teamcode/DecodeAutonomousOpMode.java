@@ -5,10 +5,12 @@ import com.pedropathing.geometry.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
-import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroMotion;
-import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroPathTelemetry;
-import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroSleep;
-import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroTeleopData;
+import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroPathConfiguration;
+import org.firstinspires.ftc.teamcode.teamPedroPathing.TeamPoses;
+import org.lhssa.ftc.teamcode.pedroPathing.PedroMotion;
+import org.lhssa.ftc.teamcode.pedroPathing.PedroPathTelemetry;
+import org.lhssa.ftc.teamcode.pedroPathing.PedroSleep;
+import org.lhssa.ftc.teamcode.pedroPathing.PedroTeleopData;
 import org.lhssa.ftc.teamcode.pedroPathing.AllianceColor;
 import org.lhssa.ftc.teamcode.pedroPathing.HeadingInterpolationType;
 import org.lhssa.ftc.teamcode.pedroPathing.PedroPather;

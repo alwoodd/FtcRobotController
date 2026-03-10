@@ -9,9 +9,9 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.firstinspires.ftc.teamcode.BallSpikeLocation;
 import org.firstinspires.ftc.teamcode.FrontBackLocation;
-import org.firstinspires.ftc.teamcode.PedroPathConfiguration;
+import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroPathConfiguration;
 import org.firstinspires.ftc.teamcode.RobotHardware;
-import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroPathTelemetry;
+import org.lhssa.ftc.teamcode.pedroPathing.PedroPathTelemetry;
 import org.lhssa.ftc.teamcode.pedroPathing.AllianceColor;
 
 @Autonomous(name = "Autonomous")

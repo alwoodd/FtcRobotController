@@ -5,7 +5,7 @@ import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.PathChain;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
-import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroPathTelemetry;
+import org.lhssa.ftc.teamcode.pedroPathing.PedroPathTelemetry;
 
 /**
  * This class provides a convenient and standard way to tell the Follower which Path to follow,
