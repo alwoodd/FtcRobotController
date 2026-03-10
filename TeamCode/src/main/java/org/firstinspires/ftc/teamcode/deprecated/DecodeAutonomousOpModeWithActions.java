@@ -5,7 +5,6 @@ import com.pedropathing.paths.PathChain;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
-import org.firstinspires.ftc.teamcode.AllianceColor;
 import org.firstinspires.ftc.teamcode.BallSpikeLocation;
 import org.firstinspires.ftc.teamcode.FrontBackLocation;
 import org.firstinspires.ftc.teamcode.PedroPathConfiguration;
@@ -13,6 +12,7 @@ import org.firstinspires.ftc.teamcode.RobotHardware;
 import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroPathTelemetry;
 import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroSleep;
 import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroTeleopData;
+import org.lhssa.ftc.teamcode.pedroPathing.AllianceColor;
 
 /**
  * This OpMode demonstrates:

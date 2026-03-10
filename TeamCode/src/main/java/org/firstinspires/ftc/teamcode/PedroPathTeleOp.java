@@ -9,9 +9,10 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroPathTelemetry;
-import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroPather;
 import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroSleep;
 import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroTeleopData;
+import org.lhssa.ftc.teamcode.pedroPathing.AllianceColor;
+import org.lhssa.ftc.teamcode.pedroPathing.PedroPather;
 
 import java.util.List;
 

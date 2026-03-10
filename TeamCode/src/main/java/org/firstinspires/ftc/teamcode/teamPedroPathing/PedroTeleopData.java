@@ -1,7 +1,8 @@
 package org.firstinspires.ftc.teamcode.teamPedroPathing;
 
 import com.pedropathing.geometry.Pose;
-import org.firstinspires.ftc.teamcode.AllianceColor;
+
+import org.lhssa.ftc.teamcode.pedroPathing.AllianceColor;
 
 /**
  * This class exists solely to preserve data between Autonomous and Teleop modes.

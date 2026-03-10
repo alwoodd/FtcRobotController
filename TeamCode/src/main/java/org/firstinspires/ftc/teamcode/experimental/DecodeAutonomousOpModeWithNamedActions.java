@@ -6,7 +6,6 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
-import org.firstinspires.ftc.teamcode.AllianceColor;
 import org.firstinspires.ftc.teamcode.deprecated.AutonomousPaths;
 import org.firstinspires.ftc.teamcode.BallSpikeLocation;
 import org.firstinspires.ftc.teamcode.deprecated.BluePedroPaths;
@@ -17,6 +16,7 @@ import org.firstinspires.ftc.teamcode.RobotHardware;
 import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroPathTelemetry;
 import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroSleep;
 import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroTeleopData;
+import org.lhssa.ftc.teamcode.pedroPathing.AllianceColor;
 
 import java.util.ArrayList;
 import java.util.Iterator;

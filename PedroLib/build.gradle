@@ -1,25 +1,24 @@
-/*
+
 plugins {
     id 'com.android.library'
 }
-*/
 
 group = 'org.lhssa.ftc'
 version = '1.0.0'
 
-apply from: '../build.common.gradle'
+//apply from: '../build.common.gradle'
 apply from: '../build.dependencies.gradle'
 
 android {
     namespace 'org.lhssa.ftc.teamcode.pedroPathing'
-//    compileSdk 36
-//
-//    defaultConfig {
-//        minSdk 24
-//
-//        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-//        consumerProguardFiles "consumer-rules.pro"
-//    }
+
+    compileSdk 36
+
+    defaultConfig {
+        minSdk 24
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
 //
 //    buildTypes {
 //        release {

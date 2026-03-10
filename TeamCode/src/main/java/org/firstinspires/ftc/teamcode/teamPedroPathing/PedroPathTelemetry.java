@@ -3,7 +3,7 @@ package org.firstinspires.ftc.teamcode.teamPedroPathing;
 import com.pedropathing.follower.Follower;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.teamcode.AllianceColor;
+import org.lhssa.ftc.teamcode.pedroPathing.AllianceColor;
 
 /**
  * Standardized telemetry that shows the current alliance color, a custom message,

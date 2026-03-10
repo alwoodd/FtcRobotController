@@ -2,6 +2,8 @@ package org.firstinspires.ftc.teamcode;
 
 import com.pedropathing.geometry.Pose;
 
+import org.lhssa.ftc.teamcode.pedroPathing.AllianceColor;
+
 /**
  * Define all the team's Poses here. The Poses should be either for RED or BLUE, and the
  * canonicalColor set accordingly.
