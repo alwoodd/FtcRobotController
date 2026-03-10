@@ -8,6 +8,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import org.firstinspires.ftc.teamcode.teamPedroPathing.HeadingInterpolationType;
 import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroMotion;
 import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroPathTelemetry;
+import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroPather;
 import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroSleep;
 import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroTeleopData;
 
@@ -29,7 +30,7 @@ public class DecodeAutonomousOpMode extends LinearOpMode {
     private FrontBackLocation launchLocation = FrontBackLocation.BACK;
     private int pathState = 0;
     private RobotHardware robot;
-    private TeamPaths teamPaths;
+    private PedroPather teamPaths;
     private PedroSleep pedroSleep;
     private PedroMotion motion;
 
@@ -51,7 +52,7 @@ public class DecodeAutonomousOpMode extends LinearOpMode {
 
         initSetup();
 
-        teamPaths = new TeamPaths(selectedColor);
+        teamPaths = new PedroPather(TeamPoses.canonicalColor, selectedColor);
         setPoses();
         pedroTelemetry = new PedroPathTelemetry(telemetry, follower, selectedColor);
         PedroTeleopData.allianceColor = selectedColor;
@@ -133,27 +134,27 @@ public class DecodeAutonomousOpMode extends LinearOpMode {
     }
 
     private void setPoses() {
-        startPose = (startLocation == FrontBackLocation.BACK) ? teamPaths.backWallStartingPose :
-            teamPaths.frontWallStartingPose;
+        startPose = (startLocation == FrontBackLocation.BACK) ? TeamPoses.backWallStartingPose :
+            TeamPoses.frontWallStartingPose;
 
-        launchPose = (launchLocation == FrontBackLocation.BACK) ? teamPaths.backGoalShootPose :
-            teamPaths.frontGoalShootPose;
+        launchPose = (launchLocation == FrontBackLocation.BACK) ? TeamPoses.backGoalShootPose :
+            TeamPoses.frontGoalShootPose;
 
         switch (ballSpikeLocation) {
             case GOAL_SIDE:
-                startBallPickupPose = teamPaths.startGoalBallPickupPose;
-                endBallPickupPose = teamPaths.endGoalBallPickupPose;
-                    leavePose = teamPaths.startMiddleBallPickupPose;
+                startBallPickupPose = TeamPoses.startGoalBallPickupPose;
+                endBallPickupPose = TeamPoses.endGoalBallPickupPose;
+                    leavePose = TeamPoses.startMiddleBallPickupPose;
                 break;
             case MIDDLE:
-                startBallPickupPose = teamPaths.startMiddleBallPickupPose;
-                endBallPickupPose = teamPaths.endMiddleBallPickupPose;
-                leavePose = teamPaths.startAudienceBallPickupPose;
+                startBallPickupPose = TeamPoses.startMiddleBallPickupPose;
+                endBallPickupPose = TeamPoses.endMiddleBallPickupPose;
+                leavePose = TeamPoses.startAudienceBallPickupPose;
                 break;
             case AUDIENCE_SIDE:
-                startBallPickupPose = teamPaths.startAudienceBallPickupPose;
-                endBallPickupPose = teamPaths.endAudienceBallPickupPose;
-                leavePose = teamPaths.startMiddleBallPickupPose;
+                startBallPickupPose = TeamPoses.startAudienceBallPickupPose;
+                endBallPickupPose = TeamPoses.endAudienceBallPickupPose;
+                leavePose = TeamPoses.startMiddleBallPickupPose;
                 break;
         }
     }

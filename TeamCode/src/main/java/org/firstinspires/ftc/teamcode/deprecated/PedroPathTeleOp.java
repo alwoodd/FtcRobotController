@@ -4,6 +4,7 @@ import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.PathChain;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
@@ -20,6 +21,7 @@ import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroTeleopData;
  * from anywhere on the field.
  */
 @TeleOp(name = "Pedro Path Teleop")
+@Disabled
 public class PedroPathTeleOp extends LinearOpMode {
     enum FollowPathDestination {
         LAUNCH,

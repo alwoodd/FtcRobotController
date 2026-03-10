@@ -9,6 +9,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroPathTelemetry;
+import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroPather;
 import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroSleep;
 import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroTeleopData;
 
@@ -19,7 +20,7 @@ import java.util.List;
  * and also building and a Path to "instantly" go to the launch Pose
  * from anywhere on the field.
  */
-@TeleOp(name = "Pedro Path Teleop Ex")
+@TeleOp(name = "Pedro Path Teleop")
 public class PedroPathTeleOp extends LinearOpMode {
     enum FollowPathDestination {
         LAUNCH,
@@ -32,6 +33,11 @@ public class PedroPathTeleOp extends LinearOpMode {
         ShooterSpeed(double speed, String speedDescription) {
             this.speed = speed;
             this. speedDescription = speedDescription;
+        }
+
+        @Override
+        public String toString() {
+            return "Current shooter speed is " + this.speedDescription;
         }
     }
     static class ShooterSpeeds {
@@ -56,7 +62,7 @@ public class PedroPathTeleOp extends LinearOpMode {
     private FollowPathDestination followPathDestination;
     private Follower follower;
     private AllianceColor allianceColor;
-    private TeamPaths teamPaths;
+    private PedroPather teamPaths;
     private PedroPathTelemetry pedroPathTelemetry;
     private PedroSleep pedroSleep;
 
@@ -79,9 +85,9 @@ public class PedroPathTeleOp extends LinearOpMode {
                 PedroTeleopData.allianceColor;
         pedroPathTelemetry = new PedroPathTelemetry(telemetry, follower, allianceColor);
         initSetup();
-        teamPaths = new TeamPaths(allianceColor);
+        teamPaths = new PedroPather(TeamPoses.canonicalColor, allianceColor);
         if (PedroTeleopData.startingPose == null) {
-            follower.setStartingPose(teamPaths.frontWallStartingPose);
+            follower.setStartingPose(TeamPoses.frontWallStartingPose);
         }
 
         ShooterSpeed currentShooterSpeed = shooterSpeeds.getFirst();
@@ -131,7 +137,7 @@ public class PedroPathTeleOp extends LinearOpMode {
 
             if (gamepad1.rightBumperWasPressed()) {
                 currentShooterSpeed = shooterSpeeds.next();
-                pedroMessage = "Current shooter speed is " + currentShooterSpeed.speedDescription;
+                pedroMessage = currentShooterSpeed.toString();
             }
         }
     }
@@ -141,6 +147,7 @@ public class PedroPathTeleOp extends LinearOpMode {
      */
     private void fineTuneHeading() {
         pedroPathTelemetry.pathTelemetry("Fine Tune Heading");
+        follower.followPath(follower.getCurrentPath());
         pedroSleep.sleep(500);
     }
 
@@ -161,7 +168,7 @@ public class PedroPathTeleOp extends LinearOpMode {
 
     private void shootBalls() {
         pedroPathTelemetry.pathTelemetry("Shooting Balls");
-        pedroSleep.sleep(4000);
+        pedroSleep.sleep(2000);
     }
 
     /**
@@ -197,8 +204,8 @@ public class PedroPathTeleOp extends LinearOpMode {
         Pose herePose = follower.getPose();
 
         return follower.pathBuilder()
-            .addPath(new BezierLine(herePose, teamPaths.backGoalShootPose))
-            .setLinearHeadingInterpolation(herePose.getHeading(), teamPaths.backGoalShootPose.getHeading())
+            .addPath(new BezierLine(herePose, TeamPoses.backGoalShootPose))
+            .setLinearHeadingInterpolation(herePose.getHeading(), TeamPoses.backGoalShootPose.getHeading())
             .build();
     }
 
@@ -211,8 +218,8 @@ public class PedroPathTeleOp extends LinearOpMode {
         Pose herePose = follower.getPose();
 
         return follower.pathBuilder()
-            .addPath(new BezierLine(herePose, teamPaths.parkPose))
-            .setLinearHeadingInterpolation(herePose.getHeading(), teamPaths.parkPose.getHeading())
+            .addPath(new BezierLine(herePose, TeamPoses.parkPose))
+            .setLinearHeadingInterpolation(herePose.getHeading(), TeamPoses.parkPose.getHeading())
             .build();
     }
 

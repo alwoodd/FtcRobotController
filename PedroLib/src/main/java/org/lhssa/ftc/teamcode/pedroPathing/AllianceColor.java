@@ -1,9 +1,5 @@
 package org.lhssa.ftc.teamcode.pedroPathing;
 
-import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import org.firstinspires.ftc.robotcore.external.Telemetry;
-import com.qualcomm.robotcore.hardware.Gamepad;
-
 public enum AllianceColor {
     RED,
     BLUE,
