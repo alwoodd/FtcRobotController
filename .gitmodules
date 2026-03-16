@@ -1,0 +1,3 @@
+[submodule "PedroLib"]
+	path = PedroLib
+	url = https://github.com/alwoodd/PedroLib.git
