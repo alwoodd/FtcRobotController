@@ -1,3 +1,7 @@
 include ':FtcRobotController'
 include ':TeamCode'
-include ':PedroLib'
+includeBuild('PedroLib') {
+    dependencySubstitution {
+        substitute module('com.github.alwoodd:PedroLib') using project(':PedroLib')
+    }
+}

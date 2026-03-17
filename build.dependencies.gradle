@@ -16,5 +16,5 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.2.0'
 
     implementation 'com.pedropathing:ftc:2.0.6'
+    implementation 'com.github.alwoodd:PedroLib:1.0.0'
 }
-
