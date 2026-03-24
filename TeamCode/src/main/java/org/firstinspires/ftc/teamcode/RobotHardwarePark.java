@@ -12,6 +12,7 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
  * Where possible, the actual hardware objects are "abstracted" (or hidden) so the OpMode code just makes calls into the class,
  * rather than accessing the internal hardware directly. This is why the objects are declared "private".
  */
+@Deprecated
 public class RobotHardwarePark {
 
     /* Declare OpMode members. */

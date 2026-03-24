@@ -7,6 +7,7 @@ import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+@Deprecated
 public class RobotHardwareSensors {
     public static final double DEFAULT_APPROACH_SPEED = .4;
     private LinearOpMode myOpMode = null;   // gain access to methods in the calling OpMode.

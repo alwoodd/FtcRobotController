@@ -4,8 +4,6 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
 
-import org.firstinspires.ftc.robotcore.external.Telemetry;
-
 /**
  * Instead of each Op Mode class redefining the robot's hardware resources within its implementation,
  * This RobotHardware class has a given robot's component resources defined and set up all in one place.
@@ -14,6 +12,7 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
  * Where possible, the actual hardware objects are "abstracted" (or hidden) so the OpMode code just makes calls into the class,
  * rather than accessing the internal hardware directly. This is why the objects are declared "private".
  */
+@Deprecated
 public class RobotHardwareTeleop {
 
     /* Declare OpMode members. */
