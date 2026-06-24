@@ -1,7 +1,7 @@
 package org.firstinspires.ftc.teamcode.teamPedroPathing;
 
-import com.pedropathing.control.FilteredPIDFCoefficients;
 import com.pedropathing.control.PIDFCoefficients;
+import com.pedropathing.control.PredictiveBrakingCoefficients;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.follower.FollowerConstants;
 import com.pedropathing.ftc.FollowerBuilder;
@@ -9,7 +9,6 @@ import com.pedropathing.ftc.drivetrains.MecanumConstants;
 import com.pedropathing.ftc.localization.constants.PinpointConstants;
 import com.pedropathing.paths.PathConstraints;
 import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
-import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
@@ -25,7 +24,7 @@ public class PedroPathConfiguration {
 
     private Follower follower;
 
-    public PedroPathConfiguration(LinearOpMode opMode) {
+    public PedroPathConfiguration(OpMode opMode) {
         this.myOpMode = opMode;
         init();
     }
@@ -46,7 +45,7 @@ public class PedroPathConfiguration {
          * Follower has its own globalMaxPower that is initialized to 1.
          * Irritatingly, this cannot be changed using FollowerConstants.
          * It can only be changed by calling setMaxPower() on the built instance
-         * of Follower. Set globalMaxPower to be the the same as that in DriveConstants.
+         * of Follower. Set globalMaxPower to be the same as that in DriveConstants.
          * (DriveConstants are set via MecanumConstants.)
          */
         this.follower.setMaxPower(driveConstants.getMaxPower());
@@ -55,12 +54,13 @@ public class PedroPathConfiguration {
     private FollowerConstants buildFollowerConstants() {
         FollowerConstants followerConstants = new FollowerConstants()
             .mass(4.452)                          //Kilograms
-            .forwardZeroPowerAcceleration(-33)
-            .lateralZeroPowerAcceleration(-48.24)
+//            .forwardZeroPowerAcceleration(-33)
+//            .lateralZeroPowerAcceleration(-48.24)
             .headingPIDFCoefficients(new PIDFCoefficients(.35, 0, .01, .024))
-            .translationalPIDFCoefficients(new PIDFCoefficients(.025,0,0,.019))
-            .drivePIDFCoefficients(new FilteredPIDFCoefficients(0, 0, 0, .6, .15))
-            .centripetalScaling(.0004);
+//            .translationalPIDFCoefficients(new PIDFCoefficients(.025,0,0,.019))
+//            .drivePIDFCoefficients(new FilteredPIDFCoefficients(0, 0, 0, .6, .15))
+            .centripetalScaling(0/*.0004*/)
+            .predictiveBrakingCoefficients(new PredictiveBrakingCoefficients(.1, .1986, .0024));
 
         //followerConstants.setTurnHeadingErrorThreshold(.05);
         followerConstants.setHoldPointHeadingScaling(.7);
