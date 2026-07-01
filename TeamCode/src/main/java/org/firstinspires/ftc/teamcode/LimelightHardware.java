@@ -10,10 +10,6 @@ import java.util.List;
 
 public class LimelightHardware {
     private final double SMOOTHING_FACTOR = .1;
-//    private final double CAMERA_ANGLE_DEGREES = -14.81;
-//    private final double CAMERA_LENS_HEIGHT_CM = 33.5;
-//    private final double DETECTED_OBJECT_CENTER_HEIGHT_CM = 1.375;
-    //private final OpMode opMode;
     private final Limelight3A limelight;
     private boolean isSearching = false;
     private final Smoothifier tXsmoothifier;
@@ -27,8 +23,6 @@ public class LimelightHardware {
     private double smoothedTx;
     private double rawTa;
     private double smoothedTa;
-//    private int smoothedTaMissCount;
-//    private double cameraAngle;
 
     private final TyDistancesTable tyDistancesTable;
     private final TyDistancesTable.TyDistance[] tyDistances = {
@@ -54,7 +48,6 @@ public class LimelightHardware {
         tYsmoothifier = new Smoothifier(SMOOTHING_FACTOR);
 
         taSmoothList = new ArrayList<>();
-//        cameraAngle = CAMERA_ANGLE_DEGREES;
 
         tyDistancesTable = new TyDistancesTable();
         tyDistancesTable.addTyDistances(tyDistances);
@@ -80,7 +73,6 @@ public class LimelightHardware {
     public void update() {
         if (isSearching) {
             LLResult llResult = limelight.getLatestResult();
-//            boolean isSmoothedTaMiss = true;
 
             if (llResult.isValid()) {
                 rawTx = llResult.getTx();
@@ -94,15 +86,9 @@ public class LimelightHardware {
                 }
                 if (rawTa != 0) {
                     smoothedTa = tAsmoothifier.smooth(rawTa);
-//                    isSmoothedTaMiss = false;
                     taSmoothList.add(smoothedTa);
                 }
             }
-            /*
-             * If smoothedTa didn't get updated (isSmoothedTaMiss is true),
-             * increment smoothedTaMissCount. Otherwise, set it to zero.
-             */
-  //          smoothedTaMissCount = isSmoothedTaMiss ? smoothedTaMissCount + 1 : 0;
         }
     }
 
@@ -147,16 +133,6 @@ public class LimelightHardware {
     public double getSmoothedTy() {
         return smoothedTy;
     }
-/*
-
-    public double getCameraAngle() {
-        return cameraAngle;
-    }
-
-    public void setCameraAngle(double angle) {
-        cameraAngle = angle;
-    }
-*/
 
     /**
      * Call to reset all Tx-related values to 0.
@@ -177,7 +153,6 @@ public class LimelightHardware {
     public void resetTa() {
         rawTa = 0;
         smoothedTa = 0;
-//        smoothedTaMissCount = 0;
         tAsmoothifier.reset();
         taSmoothList.clear();
     }
@@ -218,50 +193,6 @@ public class LimelightHardware {
         //Distance in centimeters
         return (distance * 2.54);
     }
-/*
-    public void logTaSmoothList() {
-*//*
-        for (double ta : taSmoothList) {
-            RobotLog.ii("smooth dump", "%.4f", ta);
-        }
-*//*
-        for (int i = 0; i < taSmoothList.size(); i++) {
-            RobotLog.ii("smooth dump", "%.4f", taSmoothList.get(i));
-        }
-    }*/
-
-//    /**
-//     * @param stallThreshold Desired threshold at which the current smoothedTa value
-//     *                       is considered stalled or unchanging.
-//     * @return true if smoothedTaMissCount > the passed smoothedTaMissCount
-//     */
-/*
-    public boolean isSmoothedTaStalled(int stallThreshold) {
-        return (smoothedTaMissCount >= stallThreshold);
-    }
-*/
-
-//    /**
-//     * Calculates motor power based on how far apart tA and targetTa are.
-//     * The closer they are, the lower the calculated power value.
-//     * @param tA Current Ta. Typically a smoothed Ta.
-//     * @param targetTa Target Ta we're trying to reach.
-//     * @param maxPower Maximum power that can be returned.
-//     * @return power
-//     */
-/*
-    public double taToPedroPower(double tA, double targetTa, double maxPower) {
-        double currentMinTa = minSmoothedTa();
-        double taRange = targetTa - currentMinTa;
-
-        double distanceCovered = tA - currentMinTa;
-        double progress = distanceCovered / taRange;
-//        RobotLog.ii("taToPedroPower", "minPlusMaxPower: %.2f, tA: %.4f, currentMinTa: %.4f, currentMaxTa: %.4f",
-//                minPlusMaxPower, tA, currentMinTa, currentMaxTa);
-
-        return maxPower - progress; //power
-    }
-*/
 
     /**
      * Calculate distance based on passed Ta angle.
@@ -270,26 +201,6 @@ public class LimelightHardware {
      */
     public double distanceCM(double tA) {
         return tyDistancesTable.distanceFor(tA);
-/*
-        double totalAngle = */
-/*CAMERA_ANGLE_DEGREES*//*
-cameraAngle + Ta; //Degrees
-        totalAngle = Math.toRadians(totalAngle);       //Radians
-
-        RobotLog.ii("LL hardware", "Passed Ta: %.4f, Cam angle: %.4f, h2-h1: %.4f, totalAngle (Rad): %.4f, Distance: %.4f",
-                Ta, CAMERA_ANGLE_DEGREES, DETECTED_OBJECT_CENTER_HEIGHT_CM - CAMERA_LENS_HEIGHT_CM, totalAngle, (DETECTED_OBJECT_CENTER_HEIGHT_CM - CAMERA_LENS_HEIGHT_CM) / Math.tan(totalAngle));
-
-        return ((DETECTED_OBJECT_CENTER_HEIGHT_CM - CAMERA_LENS_HEIGHT_CM) / Math.tan(totalAngle)); //Distance
-*/
-
-/*
-        double totalAngleDeg = CAMERA_ANGLE_DEGREES + Ta; //Degrees
-        double totalAngleRad = Math.toRadians(totalAngleDeg);     //Radians
-        double tanTotalAngleRad = Math.tan(totalAngleRad);
-        double distance = (DETECTED_OBJECT_CENTER_HEIGHT_CM - CAMERA_LENS_HEIGHT_CM) / tanTotalAngleRad;
-
-        return distance;//(DETECTED_OBJECT_CENTER_HEIGHT_CM - CAMERA_LENS_HEIGHT_CM / tanTotalAngleRad); //Distance
-*/
     }
 
     /**
@@ -314,28 +225,6 @@ cameraAngle + Ta; //Degrees
         endSearch();
         limelight.stop();
     }
-
-    /**
-     * @return Return the smallest taSmooth value encountered this instance
-     * of LimeLightHardware, or since the last resetTa().
-     */
-/*
-    private double minSmoothedTa() {
-        if (taSmoothList.isEmpty()) {
-            return 0;
-        }
-
-        double minSmoothed = taSmoothList.get(0);
-
-        for (double value : taSmoothList) {
-            if (value < minSmoothed) {
-                minSmoothed = value;
-            }
-        }
-
-        return minSmoothed;
-    }
-*/
 
     /**
      * Encapsulates a smoothing algorithm for successive values of T-values.
