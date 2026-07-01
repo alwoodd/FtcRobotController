@@ -5,3 +5,4 @@ includeBuild('PedroLib') {
         substitute module('com.github.alwoodd:PedroLib') using project(':PedroLib')
     }
 }
+include ':testlib'
