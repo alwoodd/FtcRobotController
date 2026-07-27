@@ -9,8 +9,22 @@ import org.lhssa.ftc.teamcode.pedroPathing.AllianceColor;
  * canonicalColor set accordingly.
  */
 public class TeamPoses {
-    public static AllianceColor canonicalColor = AllianceColor.RED;
+    public static AllianceColor canonicalColor = AllianceColor.BLUE;
 
+    public static Pose startPose = new Pose(56, 8, Math.toRadians(90));
+    public static Pose beforeStartLeftPollenPose = new Pose(24,46, Math.toRadians(130));
+    public static Pose startLeftPollenPose = new Pose(24, 46, Math.toRadians(90));
+    public static Pose endLeftPollenPose = new Pose(24, 80, Math.toRadians(90));
+    public static Pose startLeftDepositPollenPose = new Pose(24, 80, Math.toRadians(54));
+    public static Pose endDepositPollenPose = new Pose(69, 125, Math.toRadians(90));
+
+    public static Pose startRightPollenPose = new Pose(100, 59, 0);
+    public static Pose endRightPollenPose = new Pose(120, 59, 0);
+
+    public static Pose startCornerPollenPose = new Pose(120, 8, 0);
+    public static Pose endCornerPollenPose = new Pose(130, 8, 0);
+
+    /***********************************************************************************************/
     public static Pose frontWallStartingPose = new Pose(85.0, 8.5, Math.toRadians(90));
     public static Pose backWallStartingPose = new Pose(121.3, 125.3, Math.toRadians(-142));
     public static Pose backGoalShootPose = new Pose(108.4, 120.3, Math.toRadians(28));

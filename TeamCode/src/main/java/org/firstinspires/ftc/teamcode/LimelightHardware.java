@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode;
 
 import com.pedropathing.geometry.Pose;
 import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
@@ -15,7 +16,8 @@ public class LimelightHardware {
     private final Smoothifier tXsmoothifier;
     private final Smoothifier tYsmoothifier;
     private final Smoothifier tAsmoothifier;
-    private final List<Double> taSmoothList;
+    private final List <LLResultTypes.FiducialResult> emptyFiducialList;
+    private List<LLResultTypes.FiducialResult> fiducialResults;
 
     private double rawTy;
     private double smoothedTy;
@@ -23,6 +25,8 @@ public class LimelightHardware {
     private double smoothedTx;
     private double rawTa;
     private double smoothedTa;
+
+    private boolean isAutoStarted = false;
 
     private final TyDistancesTable tyDistancesTable;
     private final TyDistancesTable.TyDistance[] tyDistances = {
@@ -39,7 +43,6 @@ public class LimelightHardware {
      * @param pipeLineNumber Initial Limelight pipeline number.
      */
     public LimelightHardware(OpMode opMode, int pipeLineNumber/*, double minPower, double maxPower*/) {
-        //this.opMode = opMode;
         limelight = opMode.hardwareMap.get(Limelight3A.class, "limelight");
         setPipeLineNumber(pipeLineNumber);
 
@@ -47,10 +50,11 @@ public class LimelightHardware {
         tAsmoothifier = new Smoothifier(SMOOTHING_FACTOR);
         tYsmoothifier = new Smoothifier(SMOOTHING_FACTOR);
 
-        taSmoothList = new ArrayList<>();
-
         tyDistancesTable = new TyDistancesTable();
         tyDistancesTable.addTyDistances(tyDistances);
+
+        emptyFiducialList = new ArrayList<>();
+        fiducialResults = emptyFiducialList;
     }
 
     /**
@@ -58,6 +62,10 @@ public class LimelightHardware {
      */
     public void beginSearch() {
         isSearching = true;
+        if (!limelight.isRunning()) {
+            startLimelight();
+            isAutoStarted = true;
+        }
     }
 
     /**
@@ -65,12 +73,17 @@ public class LimelightHardware {
      */
     public void endSearch() {
         isSearching = false;
+        if (isAutoStarted) {
+            limelight.stop();
+            isAutoStarted = false;
+        }
     }
 
     /**
      * This needs to be called during every iteration of the OpMode's processing loop.
      */
     public void update() {
+        fiducialResults = emptyFiducialList;
         if (isSearching) {
             LLResult llResult = limelight.getLatestResult();
 
@@ -86,8 +99,9 @@ public class LimelightHardware {
                 }
                 if (rawTa != 0) {
                     smoothedTa = tAsmoothifier.smooth(rawTa);
-                    taSmoothList.add(smoothedTa);
                 }
+
+                fiducialResults = llResult.getFiducialResults();
             }
         }
     }
@@ -154,7 +168,6 @@ public class LimelightHardware {
         rawTa = 0;
         smoothedTa = 0;
         tAsmoothifier.reset();
-        taSmoothList.clear();
     }
 
     /**
@@ -224,6 +237,18 @@ public class LimelightHardware {
     public void stopLimelight() {
         endSearch();
         limelight.stop();
+    }
+
+    /**
+     * Return an array of AprilTag Ids seen during the last call to upate().
+     * @return Integer[]
+     */
+    public Integer[] getTagIds() {
+        List<Integer> numList = new ArrayList<>();
+        for (LLResultTypes.FiducialResult result : fiducialResults) {
+            numList.add(result.getFiducialId());
+        }
+        return numList.toArray(new Integer[0]);
     }
 
     /**

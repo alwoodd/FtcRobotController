@@ -81,6 +81,11 @@ public class AprilTagLimelightTest extends OpMode {
         telemetry.addData("Heading (degrees)", pedroHeading);
     }
 
+    /**
+     * Convert the passed Pose3D into a Pedro Pose.
+     * @param pose3D Pose3D
+     * @return Pose
+     */
     private Pose pose3DToPedroPose(Pose3D pose3D) {
         Position position3D = pose3D.getPosition().toUnit(DistanceUnit.INCH);
         double llX = position3D.x;
@@ -114,6 +119,11 @@ public class AprilTagLimelightTest extends OpMode {
         return new Pose(pX, pY, pHeading);
     }
 
+    /**
+     * Iterate passed fudicalResults. Return them as a String.
+     * @param fiducialResults List<LLResultTypes.FiducialResult>
+     * @return String
+     */
     private String getAllTagIds(List<LLResultTypes.FiducialResult> fiducialResults) {
         StringBuilder sb = new StringBuilder();
 

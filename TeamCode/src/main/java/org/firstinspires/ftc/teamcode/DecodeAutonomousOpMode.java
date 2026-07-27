@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroPathConfiguration;
@@ -22,6 +23,7 @@ import org.lhssa.ftc.teamcode.pedroPathing.PedroPather;
  * -A way to flexibly set a start Pose on a configured teleOp class, to its configured
  *  static field the teleOp class uses for its start Pose.
  */
+@Disabled
 @Autonomous(name = "Autonomous with actions Ex")
 public class DecodeAutonomousOpMode extends LinearOpMode {
     private PedroPathTelemetry pedroTelemetry;
