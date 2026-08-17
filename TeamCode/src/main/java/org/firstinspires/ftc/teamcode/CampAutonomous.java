@@ -83,7 +83,7 @@ public class CampAutonomous extends LinearOpMode {
                 if (pedroMotion.isPathComplete()) {
                     //intakeOff
                     currentAction = actionStep.next();
-                    startFlowersPose = TeamPoses.startLeftDepositPollenPose;
+                    startFlowersPose = TeamPoses.endLeftPollenPose;
                 }
                 break;
             case 2:

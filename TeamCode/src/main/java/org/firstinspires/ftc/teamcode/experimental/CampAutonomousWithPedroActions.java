@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.experimental;
 
+import android.net.wifi.p2p.WifiP2pManager;
+
 import com.pedropathing.follower.Follower;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -29,6 +31,8 @@ public class CampAutonomousWithPedroActions extends LinearOpMode {
     private List<PedroAction> actionSteps;
 
     private final double POLLEN_PICKUP_SPEED = .25;
+    private final int APRILTAG_PIPELINE = 8;
+    private final int POLLEN_PIPELINE = 9;
 
     //private RobotHardware robot;
 
@@ -44,20 +48,21 @@ public class CampAutonomousWithPedroActions extends LinearOpMode {
         pedroSleep = new PedroSleep(follower);
         actionSteps = new ArrayList<>();
         //robot = new RobotHardware(this);
-        llHardware = new LimelightHardware(this, 8);
 
+        llHardware = new LimelightHardware(this, APRILTAG_PIPELINE);
         initSetup();
         if (isStopRequested()) return;
 
         pedroPathTelemetry = new PedroPathTelemetry(telemetry, follower, AllianceColor.RED);
         Iterator<PedroAction> actionStep = actionSteps.iterator();
         PedroAction currentAction = actionStep.hasNext() ? actionStep.next() : new PedroNoAction();
-
+        llHardware.setPipeLineNumber(POLLEN_PIPELINE);
+        pedroPathTelemetry.pathTelemetry(currentAction.getDescription());
         follower.setStartingPose(TeamPoses.startPose);
 
-        waitForStart();
+    //follower.setMaxPower(.2);
 
-        llHardware.beginSearch();
+        waitForStart();
 
         while (opModeIsActive()) {
             follower.update();
@@ -80,18 +85,18 @@ public class CampAutonomousWithPedroActions extends LinearOpMode {
         //robot.raiseLift();
         //robot.flickBucket();
         //robot.lowerLift();
-        pedroSleep.sleep(3000);
+        pedroSleep.sleep(2000);
     }
 
     private void intakeOn() {
         pedroPathTelemetry.pathTelemetry("Intake On");
-        pedroSleep.sleep(3000);
+        pedroSleep.sleep(2000);
     }
 
 
     private void intakeOff() {
         pedroPathTelemetry.pathTelemetry("Intake Off");
-        pedroSleep.sleep(3000);
+        pedroSleep.sleep(2000);
     }
 
 
@@ -145,10 +150,11 @@ public class CampAutonomousWithPedroActions extends LinearOpMode {
             }
             else {
                 tagId = -99;
+                priorTagId = -99;
                 actionSteps.clear();
-                //actionSteps.add(0);
                 gameConfig = "Not seeing a tag";
             }
+
             telemetry.addData("Game configuration", gameConfig);
             if (tagId != -99) {
                 telemetry.addData("AprilTag Id", tagId);

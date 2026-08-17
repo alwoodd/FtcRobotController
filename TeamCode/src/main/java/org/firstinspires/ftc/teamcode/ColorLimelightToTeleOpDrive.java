@@ -11,7 +11,7 @@ import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroPathConfiguration;
 
 @Autonomous
 public class ColorLimelightToTeleOpDrive extends OpMode {
-    private final boolean IS_LOGGING = true;
+    private final boolean IS_LOGGING = false;
     private final double KP_TURN = .015;
     private final double TURN_THRESHOLD_DEGREES = 2;
 
@@ -168,6 +168,7 @@ public class ColorLimelightToTeleOpDrive extends OpMode {
         telemetry.addData("Is Following?", isFollowing);
 
         telemetry.addLine();
+        telemetry.addData("Continuously Updating Target distance (from LL)", llHardware.distanceCM(smoothedTy));
         telemetry.addData("Target distance (from LL)", targetDistanceCM);
         telemetry.addData("Distance remaining", distanceRemainingCM);
         telemetry.addData("Distance traveled", distanceTraveledCM);

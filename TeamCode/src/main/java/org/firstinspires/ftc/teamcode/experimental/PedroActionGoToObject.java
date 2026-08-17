@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.experimental;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.util.Timer;
+import com.qualcomm.robotcore.util.RobotLog;
 
 import org.firstinspires.ftc.teamcode.LimelightHardware;
 
@@ -16,20 +17,25 @@ public class PedroActionGoToObject implements PedroAction{
 
     private final double KP_TURN = .015;
     private final double TURN_THRESHOLD_DEGREES = 2;
-    private final double FORWARD_DISTANCE_THRESHOLD_CM = 24;
-    private final double FORWARD_POWER_AGGRESIVENESS = 1.7;
+    private final double FORWARD_DISTANCE_THRESHOLD_CM = 40;
+    private final double FORWARD_POWER_AGGRESIVENESS = 2.5;
     private final double DESIRED_FORWARD_POWER_AT_THRESHOLD = .1;
+    private final double MOVEMENT_DURATION_MS = 2000;
 
-    private final double BRAKING_DURATION_MS = 100;
+    private final double BRAKING_DURATION_MS = 200;
     private final double BRAKING_POWER = -.1;
 
+    private double turnPower;
+    private double forwardPower;
     private double targetPedroHeadingDegrees;
     private boolean wasTurning;
     private Pose targetStartingPedroPose;
     private double targetDistanceCM;
     private boolean wasMovingForward;
-    private final Timer timer;
     private boolean isStopped;
+    private Timer brakingTimer;
+    private Timer movementTimer;
+    private boolean isInitialized = false;
 
     /**
      * Constructor
@@ -40,26 +46,34 @@ public class PedroActionGoToObject implements PedroAction{
     public PedroActionGoToObject(String description, Follower follower, LimelightHardware limelightHardware) {
         this.description = description;
         this.follower = follower;
-        this.follower.startTeleOpDrive(true);
         this.llHardware = limelightHardware;
-        this.llHardware.beginSearch();
-        this.timer = new Timer();
     }
 
     @Override
     public void update() {
-        double turnPower = calculateTurningPower();
-        double forwardPower = calculateForwardPower();
+        if (!isInitialized) initialize();
+
+        turnPower = calculateTurningPower();
+        forwardPower = calculateForwardPower();
         follower.setTeleOpDrive(forwardPower, 0, turnPower);
     }
 
     /**
-     * isComplete is true if we're both done with turning and moving forward.
-     * @return true if we're currently not moving towards a target object.
+     * @return true if we haven't been moving for MOVEMENT_DURATION_MS.
      */
     @Override
     public boolean isComplete() {
-        return (!wasTurning && !wasMovingForward);
+        boolean isComplete = false;
+
+        if (turnPower != 0 && forwardPower != 0) {
+            movementTimer.resetTimer();
+        }
+        else if (movementTimer.getElapsedTime() > MOVEMENT_DURATION_MS) {
+            isComplete = true;
+            movementTimer.resetTimer();
+        }
+
+        return isComplete;
     }
 
     @Override
@@ -67,8 +81,27 @@ public class PedroActionGoToObject implements PedroAction{
         return description;
     }
 
+    /**
+     * Initialize various values and settings.
+     * This is intended to be called *once*.
+     */
+    private void initialize() {
+        targetStartingPedroPose = follower.getPose();
+        targetPedroHeadingDegrees = Math.toDegrees(follower.getHeading());
+        targetDistanceCM = 0;
+        wasTurning = false;
+        wasMovingForward = false;
+        isStopped = false;
+        brakingTimer = new Timer();
+        movementTimer = new Timer();
+        llHardware.beginSearch();
+        follower.startTeleOpDrive(true);
+
+        isInitialized = true;
+    }
+
     private double calculateTurningPower() {
-        double turnPower = 0; //Negative turns right, positive left.
+        turnPower = 0; //Negative turns right, positive left.
         double currentPedroHeadingDegrees = Math.toDegrees(follower.getHeading());
         double angleRemaining = targetPedroHeadingDegrees - currentPedroHeadingDegrees;
         /*
@@ -98,15 +131,17 @@ public class PedroActionGoToObject implements PedroAction{
     }
 
     private double calculateForwardPower() {
-        double forwardPower = 0;
+        forwardPower = 0;
         double distanceTraveledCM = LimelightHardware.distanceBetweenPosesCM(targetStartingPedroPose, follower.getPose());
         double distanceRemainingCM = targetDistanceCM - distanceTraveledCM;
         /*
          * If the remaining distance is greater than DISTANCE_THRESHOLD_CM,
-         * calculate a forward power using the remaining distance * the KP_FORWARD factor.
+         * calculate a forward power using the remaining distance.
          */
-        if (distanceRemainingCM  > FORWARD_DISTANCE_THRESHOLD_CM) {
+        if (distanceRemainingCM > FORWARD_DISTANCE_THRESHOLD_CM) {
             forwardPower = forwardPower(distanceRemainingCM);
+    //RobotLog.ii("Forward Power", "Distance remaining: %.2f; Forward power: %.2f", distanceRemainingCM, forwardPower);
+
             wasMovingForward = true;
         }
         /*
@@ -115,7 +150,7 @@ public class PedroActionGoToObject implements PedroAction{
          */
         else if (wasMovingForward) {
             llHardware.resetTy();
-            timer.resetTimer();
+            brakingTimer.resetTimer();
             forwardPower = 0;
             wasMovingForward = false;
             isStopped = false;
@@ -124,7 +159,7 @@ public class PedroActionGoToObject implements PedroAction{
          * Apply some braking to make the robot stop more quickly.
          */
         else if (!isStopped) {
-            if (timer.getElapsedTime() < BRAKING_DURATION_MS) {
+            if (brakingTimer.getElapsedTime() < BRAKING_DURATION_MS) {
                 forwardPower = BRAKING_POWER;
             }
             else {
@@ -147,12 +182,12 @@ public class PedroActionGoToObject implements PedroAction{
     }
 
     /**
-     * Calculate a power based on distanceRemaining. The shorter the distance, the lower the power.
-     * @param distanceRemaining distance remaining
+     * Calculate a power based on distanceRemainingCM. The shorter the distance, the lower the power.
+     * @param distanceRemainingCM distance remaining
      * @return power
      */
-    private double forwardPower(double distanceRemaining) {
-        double ratio = distanceRemaining / FORWARD_DISTANCE_THRESHOLD_CM;
+    private double forwardPower(double distanceRemainingCM) {
+        double ratio = distanceRemainingCM / FORWARD_DISTANCE_THRESHOLD_CM;
         return (DESIRED_FORWARD_POWER_AT_THRESHOLD * Math.pow(ratio, FORWARD_POWER_AGGRESIVENESS));
     }
 }
