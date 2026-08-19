@@ -3,14 +3,15 @@ package org.firstinspires.ftc.teamcode.experimental;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.util.Timer;
-import com.qualcomm.robotcore.util.RobotLog;
 
 import org.firstinspires.ftc.teamcode.LimelightHardware;
+
+import pedroActions.PedroAction;
 
 /**
  * PedroAction that demonstrates using LimelightHardware info for calculating wheel powers.
  */
-public class PedroActionGoToObject implements PedroAction{
+public class PedroActionGoToObject implements PedroAction {
     private final String description;
     private LimelightHardware llHardware;
     private final Follower follower;

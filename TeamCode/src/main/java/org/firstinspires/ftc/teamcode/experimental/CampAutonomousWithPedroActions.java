@@ -1,13 +1,10 @@
 package org.firstinspires.ftc.teamcode.experimental;
 
-import android.net.wifi.p2p.WifiP2pManager;
-
 import com.pedropathing.follower.Follower;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.firstinspires.ftc.teamcode.LimelightHardware;
-import org.firstinspires.ftc.teamcode.RobotHardware;
 import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroPathConfiguration;
 import org.firstinspires.ftc.teamcode.teamPedroPathing.TeamPoses;
 import org.lhssa.ftc.teamcode.pedroPathing.AllianceColor;
@@ -17,9 +14,10 @@ import org.lhssa.ftc.teamcode.pedroPathing.PedroPathTelemetry;
 import org.lhssa.ftc.teamcode.pedroPathing.PedroPather;
 import org.lhssa.ftc.teamcode.pedroPathing.PedroSleep;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import org.lhssa.ftc.teamcode.pedroActions.PedroAction;
+import org.lhssa.ftc.teamcode.pedroActions.PedroActionPath;
+import org.lhssa.ftc.teamcode.pedroActions.PedroActionManager;
+import org.lhssa.ftc.teamcode.pedroActions.PedroActionWithRunnable;
 
 @Autonomous
 public class CampAutonomousWithPedroActions extends LinearOpMode {
@@ -28,7 +26,8 @@ public class CampAutonomousWithPedroActions extends LinearOpMode {
     private PedroPathTelemetry pedroPathTelemetry;
     private PedroSleep pedroSleep;
 
-    private List<PedroAction> actionSteps;
+    //private List<PedroAction> actionSteps;
+    private PedroActionManager actionManager;
 
     private final double POLLEN_PICKUP_SPEED = .25;
     private final int APRILTAG_PIPELINE = 8;
@@ -37,16 +36,16 @@ public class CampAutonomousWithPedroActions extends LinearOpMode {
     //private RobotHardware robot;
 
     private LimelightHardware llHardware;
-    private Follower follower;
 
     @Override
     public void runOpMode() throws InterruptedException {
 
-        follower = new PedroPathConfiguration(this).getFollower();
+        Follower follower = new PedroPathConfiguration(this).getFollower();
         pedroPather = new PedroPather(AllianceColor.BLUE, AllianceColor.BLUE);
         pedroMotion = new PedroMotion(follower);
         pedroSleep = new PedroSleep(follower);
-        actionSteps = new ArrayList<>();
+        //actionSteps = new ArrayList<>();
+        actionManager = new PedroActionManager();
         //robot = new RobotHardware(this);
 
         llHardware = new LimelightHardware(this, APRILTAG_PIPELINE);
@@ -54,13 +53,11 @@ public class CampAutonomousWithPedroActions extends LinearOpMode {
         if (isStopRequested()) return;
 
         pedroPathTelemetry = new PedroPathTelemetry(telemetry, follower, AllianceColor.RED);
-        Iterator<PedroAction> actionStep = actionSteps.iterator();
-        PedroAction currentAction = actionStep.hasNext() ? actionStep.next() : new PedroNoAction();
+        //Iterator<PedroAction> actionStep = actionSteps.iterator();
+        PedroAction currentAction = actionManager.next();// = actionStep.hasNext() ? actionStep.next() : new PedroNoAction();
         llHardware.setPipeLineNumber(POLLEN_PIPELINE);
         pedroPathTelemetry.pathTelemetry(currentAction.getDescription());
         follower.setStartingPose(TeamPoses.startPose);
-
-    //follower.setMaxPower(.2);
 
         waitForStart();
 
@@ -69,8 +66,8 @@ public class CampAutonomousWithPedroActions extends LinearOpMode {
             llHardware.update();
             currentAction.update();
             if (currentAction.isComplete()) {
-                if (actionStep.hasNext()) {
-                    currentAction = actionStep.next();
+                if (actionManager.hasNext()) {
+                    currentAction = actionManager.next();
                     pedroPathTelemetry.pathTelemetry(currentAction.getDescription());
                 }
                 else {
@@ -102,8 +99,7 @@ public class CampAutonomousWithPedroActions extends LinearOpMode {
 
     private void initSetup() {
         String gameConfig = "Unknown";
-        int tagId;
-        int priorTagId = -99;
+        int tagId = -99;
         llHardware.beginSearch();
 
         while (opModeInInit()) {
@@ -111,47 +107,22 @@ public class CampAutonomousWithPedroActions extends LinearOpMode {
             Integer[] tagIds = llHardware.getTagIds();
             if (tagIds.length == 1) {
                 tagId = tagIds[0];
-                if (tagId != priorTagId) {
-                    priorTagId = tagId;
                     switch (tagId) {
-                        //Left side pollen
                         case 20:
-                            actionSteps.clear();
-                            actionSteps.add(new PedroActionPath("Going to left side pollen",
-                                    pedroPather.pathBetween(TeamPoses.startPose, TeamPoses.beforeStartLeftPollenPose,
-                                    HeadingInterpolationType.LINEAR),
-                                    pedroMotion));
-                            actionSteps.add(new PedroActionWithRunnable("Picking up left pollen",
-                                    pedroPather.pathBetween(TeamPoses.startLeftPollenPose, TeamPoses.endLeftPollenPose,
-                                    HeadingInterpolationType.TANGENT),
-                                    pedroMotion, POLLEN_PICKUP_SPEED, this::intakeOn));
-                            actionSteps.add(new PedroActionWithRunnable("Going to flowers",
-                                    pedroPather.pathBetween(TeamPoses.endLeftPollenPose, TeamPoses.endDepositPollenPose,
-                                    HeadingInterpolationType.LINEAR),
-                                    pedroMotion, this::depositPollen/*robot::releaseDrone*/));
-                            actionSteps.add(new PedroActionGoToObject("Moving to pollen", follower, llHardware));
                             gameConfig = "Left Side Pollen";
                             break;
-                        //Right side pollen
                         case 24:
-                            actionSteps.clear();
                             gameConfig = "Right Side Pollen";
                             break;
-                        //Back right corner pollen
                         case 11:
-                            actionSteps.clear();
                             gameConfig = "Back Right Corner Pollen";
                             break;
                         default:
-                            actionSteps.clear();
                             gameConfig = "Unknown";
                     }
-                }
             }
             else {
                 tagId = -99;
-                priorTagId = -99;
-                actionSteps.clear();
                 gameConfig = "Not seeing a tag";
             }
 
@@ -161,6 +132,25 @@ public class CampAutonomousWithPedroActions extends LinearOpMode {
             }
             telemetry.update();
         }
+
         llHardware.endSearch();
+        switch (tagId) {
+            case 20:
+                actionManager.add(new PedroActionPath("Going to left side pollen",
+                    pedroPather.pathBetween(TeamPoses.startPose, TeamPoses.beforeStartLeftPollenPose,
+                    HeadingInterpolationType.LINEAR),
+                    pedroMotion));
+                actionManager.add(new PedroActionWithRunnable("Picking up left pollen",
+                    pedroPather.pathBetween(TeamPoses.startLeftPollenPose, TeamPoses.endLeftPollenPose,
+                    HeadingInterpolationType.TANGENT),
+                    pedroMotion, POLLEN_PICKUP_SPEED, this::intakeOn));
+                actionManager.add(new PedroActionWithRunnable("Going to flowers",
+                    pedroPather.pathBetween(TeamPoses.endLeftPollenPose, TeamPoses.endDepositPollenPose,
+                    HeadingInterpolationType.LINEAR),
+                    pedroMotion, this::depositPollen/*robot::releaseDrone*/));
+                break;
+            case 24:
+            case 11:
+        }
     }
 }
