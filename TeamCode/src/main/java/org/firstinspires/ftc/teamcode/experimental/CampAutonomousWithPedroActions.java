@@ -5,6 +5,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.firstinspires.ftc.teamcode.LimelightHardware;
+import org.firstinspires.ftc.teamcode.RobotHardware;
 import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroPathConfiguration;
 import org.firstinspires.ftc.teamcode.teamPedroPathing.TeamPoses;
 import org.lhssa.ftc.teamcode.pedroPathing.AllianceColor;
@@ -33,7 +34,7 @@ public class CampAutonomousWithPedroActions extends LinearOpMode {
     private final int APRILTAG_PIPELINE = 8;
     private final int POLLEN_PIPELINE = 9;
 
-    //private RobotHardware robot;
+    private RobotHardware robot;
 
     private LimelightHardware llHardware;
 
@@ -46,7 +47,7 @@ public class CampAutonomousWithPedroActions extends LinearOpMode {
         pedroSleep = new PedroSleep(follower);
         //actionSteps = new ArrayList<>();
         actionManager = new PedroActionManager();
-        //robot = new RobotHardware(this);
+        robot = new RobotHardware(this);
 
         llHardware = new LimelightHardware(this, APRILTAG_PIPELINE);
         initSetup();
@@ -79,9 +80,9 @@ public class CampAutonomousWithPedroActions extends LinearOpMode {
 
     private void depositPollen() {
         pedroPathTelemetry.pathTelemetry("Depositing pollen");
-        //robot.raiseLift();
+        robot.setArmTo(ArmPosition.HIGH);
         //robot.flickBucket();
-        //robot.lowerLift();
+        robot.setArmTo(ArmPosition.PARKED);
         pedroSleep.sleep(2000);
     }
 

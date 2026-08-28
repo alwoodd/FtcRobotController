@@ -35,6 +35,7 @@ import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.ImuOrientationOnRobot;
@@ -45,9 +46,8 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.teamcode.experimental.ArmPosition;
 import org.firstinspires.ftc.vision.VisionPortal;
-
-import java.util.HashMap;
 
 /**
  * Instead of each Op Mode class redefining the robot's hardware resources within its implementation,
@@ -72,10 +72,14 @@ public class RobotHardware {
     private DistanceSensor leftDistanceSensor;
     private DistanceSensor rightDistanceSensor;
     private ColorSensor colorSensor;
+    private DigitalChannel armLimitSensor;
     private AnalogInput potentiometer;
     private IMU imu;
     private DcMotorEx leftSpinnyMotor;
     private DcMotorEx rightSpinnyMotor;
+    private DcMotorEx liftArmMotor;
+
+    private ArmLift armLift;
 
     // Hardware device constants.  Make them public so they can be used by the calling OpMode, if needed.
     static final double COUNTS_PER_MOTOR_REV = 560;     // Assumes 20:1 gear reduction
@@ -120,29 +124,20 @@ public class RobotHardware {
      * Call init() to initialize all the robot's hardware.
      */
     private void init() {
-/*
         initServos();
-        initDistanceSensors();
+        initSensors();
+/*
         initColorSensor();
         initAnalogInputs();
         initArmMotors();
         initIMU();
 */
+        assert liftArmMotor != null;
+        armLift = new ArmLift(liftArmMotor, armLimitSensor);
 
         myOpMode.telemetry.addData(">", "Hardware Initialized");
         myOpMode.telemetry.update();
     }
-
-    /**
-     * Call shutDown() to stop and close all the robot's hardware.
-     */
-/*
-    public void shutDown() {
-        tfod.shutdown();
-        visionPortal.close();
-    }
-*/
-
 
     /**
      * Initialize all servos.
@@ -158,22 +153,25 @@ public class RobotHardware {
     /**
      * Initialize distance sensor(s).
      */
-    private void initDistanceSensors() {
+    private void initSensors() {
         leftDistanceSensor = myOpMode.hardwareMap.get(DistanceSensor.class, "centerDistanceSensor");
         rightDistanceSensor = myOpMode.hardwareMap.get(DistanceSensor.class, "sideDistanceSensor");
-    }
 
-    private void initColorSensor() {
         colorSensor = myOpMode.hardwareMap.get(ColorSensor.class, "colorSensor");
+
+        armLimitSensor = myOpMode.hardwareMap.get(DigitalChannel.class, "armLimitSwitch");
+        armLimitSensor.setMode((DigitalChannel.Mode.INPUT));
     }
 
     private void initAnalogInputs() {
         potentiometer = myOpMode.hardwareMap.get(AnalogInput.class, "potentiometer");
     }
 
-    private void initArmMotors() {
+    private void initMotors() {
         leftArm = myOpMode.hardwareMap.get(DcMotorEx.class, "leftArm");
         rightArm = myOpMode.hardwareMap.get(DcMotorEx.class, "rightArm");
+        liftArmMotor = myOpMode.hardwareMap.get(DcMotorEx.class, "liftArm");
+
     }
 
     private void initIMU() {
@@ -563,6 +561,66 @@ public class RobotHardware {
                 leftSpinnyMotor.getVelocity(AngleUnit.DEGREES),
                 rightSpinnyMotor.getVelocity(AngleUnit.DEGREES)
         );
+    }
+
+    public void setArmTo(ArmPosition position) {
+        armLift.setArmTo(position);
+    }
+
+    /**
+     * Example of class that encapsulates implementation of moving an arm motor
+     * to any positioned defined by ArmPosition.
+     */
+    private static class ArmLift {
+        private final DcMotorEx armMotor;
+        private int baseArmPosition;
+        private final DigitalChannel armLimitSensor;
+
+        public ArmLift(DcMotorEx armMotor, DigitalChannel armLimitSensor) {
+            this.armMotor = armMotor;
+            this.baseArmPosition = armMotor.getCurrentPosition();
+            this.armLimitSensor = armLimitSensor;
+        }
+
+        public void setArmTo(ArmPosition position) {
+            if (position == ArmPosition.PARKED) {
+                runToParked();
+            }
+            else {
+                runToPosition(position);
+            }
+        }
+
+        private void runToParked() {
+            armMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            armMotor.setPower(-1);
+            while (armLimitSensor.getState()) {
+                //do nothing
+            }
+            armMotor.setPower(0);
+            baseArmPosition = armMotor.getCurrentPosition(); //reset just in case.
+        }
+
+        private void runToPosition(ArmPosition position) {
+            int targetPosition = 0;
+
+            switch (position) {
+                case LOW:
+                    targetPosition = 250;
+                    break;
+                case MIDDLE:
+                    targetPosition = 500;
+                    break;
+                case HIGH:
+                    targetPosition = 700;
+                    break;
+            }
+
+            targetPosition += this.baseArmPosition;
+            armMotor.setTargetPosition(targetPosition);
+            armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            armMotor.setPower(1);
+        }
     }
 
     public static class SpinnerVelocities {
