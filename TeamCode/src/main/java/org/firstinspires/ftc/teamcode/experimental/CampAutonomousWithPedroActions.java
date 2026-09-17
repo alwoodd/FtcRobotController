@@ -138,16 +138,14 @@ public class CampAutonomousWithPedroActions extends LinearOpMode {
         switch (tagId) {
             case 20:
                 actionManager.add(new PedroActionPath("Going to left side pollen",
-                    pedroPather.pathBetween(TeamPoses.startPose, TeamPoses.beforeStartLeftPollenPose,
-                    HeadingInterpolationType.LINEAR),
+                    pedroPather.pathBetween(TeamPoses.startPose, TeamPoses.beforeStartLeftPollenPose),
                     pedroMotion));
                 actionManager.add(new PedroActionWithRunnable("Picking up left pollen",
                     pedroPather.pathBetween(TeamPoses.startLeftPollenPose, TeamPoses.endLeftPollenPose,
                     HeadingInterpolationType.TANGENT),
                     pedroMotion, POLLEN_PICKUP_SPEED, this::intakeOn));
                 actionManager.add(new PedroActionWithRunnable("Going to flowers",
-                    pedroPather.pathBetween(TeamPoses.endLeftPollenPose, TeamPoses.endDepositPollenPose,
-                    HeadingInterpolationType.LINEAR),
+                    pedroPather.pathBetween(TeamPoses.endLeftPollenPose, TeamPoses.endDepositPollenPose),
                     pedroMotion, this::depositPollen/*robot::releaseDrone*/));
                 break;
             case 24:

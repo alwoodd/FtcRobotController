@@ -6,7 +6,7 @@ import com.pedropathing.util.Timer;
 
 import org.firstinspires.ftc.teamcode.LimelightHardware;
 
-import pedroActions.PedroAction;
+import org.lhssa.ftc.teamcode.pedroActions.PedroAction;
 
 /**
  * PedroAction that demonstrates using LimelightHardware info for calculating wheel powers.

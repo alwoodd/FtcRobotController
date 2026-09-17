@@ -126,10 +126,10 @@ public class RobotHardware {
     private void init() {
         initServos();
         initSensors();
+        initMotors();
 /*
         initColorSensor();
         initAnalogInputs();
-        initArmMotors();
         initIMU();
 */
         assert liftArmMotor != null;
@@ -170,8 +170,8 @@ public class RobotHardware {
     private void initMotors() {
         leftArm = myOpMode.hardwareMap.get(DcMotorEx.class, "leftArm");
         rightArm = myOpMode.hardwareMap.get(DcMotorEx.class, "rightArm");
-        liftArmMotor = myOpMode.hardwareMap.get(DcMotorEx.class, "liftArm");
 
+        liftArmMotor = myOpMode.hardwareMap.get(DcMotorEx.class, "liftArm");
     }
 
     private void initIMU() {
@@ -620,7 +620,24 @@ public class RobotHardware {
             armMotor.setTargetPosition(targetPosition);
             armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             armMotor.setPower(1);
+
+            while(armMotor.isBusy()) {
+                //follower.update();
+            }
         }
+    }
+
+    public void startPollenPickup() {
+        this.armLift.setArmTo(ArmPosition.PARKED);
+
+        while(true /*!isPollenTubFull()*/) {
+            armLift.setArmTo(ArmPosition.LOW);
+            armLift.setArmTo(ArmPosition.PARKED);
+        }
+    }
+
+    public void stopPollenPickup() {
+        liftArmMotor.setPower(0);
     }
 
     public static class SpinnerVelocities {
