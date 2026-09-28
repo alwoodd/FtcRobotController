@@ -1,8 +1,10 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.pedropathing.algorithm.Foresight;
+import com.pedropathing.algorithm.ForesightConfig;
 import com.pedropathing.follower.Follower;
-import com.pedropathing.geometry.Pose;
-import com.pedropathing.util.Timer;
+import com.pedropathing.math.Pose;
+import com.pedropathing.utils.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.util.RobotLog;
@@ -42,9 +44,9 @@ public class ColorLimelightToTeleOpDrive extends OpMode {
         llHardware = new LimelightHardware(this, 9);
         PedroPathConfiguration pedroPathConfiguration = new PedroPathConfiguration(this);
         follower = pedroPathConfiguration.getFollower();
-        follower.setStartingPose(startPose);
-        follower.setMaxPower(.3);
-        targetPedroHeadingDegrees = Math.toDegrees(startPose.getHeading());
+        follower.setPose(startPose); //Starting pose
+        //follower.setMaxPower(.3);
+        targetPedroHeadingDegrees = Math.toDegrees(startPose.heading());
         targetDistanceCM = 0;
         targetStartingPedroPose = startPose;
         wasTurning = false;
@@ -57,7 +59,7 @@ public class ColorLimelightToTeleOpDrive extends OpMode {
     public void start() {
         llHardware.startLimelight();
         llHardware.beginSearch();
-        follower.startTeleOpDrive(true);
+        //follower.startTeleOpDrive(true);
     }
 
     @Override
@@ -92,7 +94,7 @@ public class ColorLimelightToTeleOpDrive extends OpMode {
          * Turning power calculations
          */
         double turnPower = 0; //Negative turns right, positive left.
-        double currentPedroHeadingDegrees = Math.toDegrees(follower.getHeading());
+        double currentPedroHeadingDegrees = Math.toDegrees(follower.pose().heading());
         double angleRemaining = targetPedroHeadingDegrees - currentPedroHeadingDegrees;
         /*
          * If the difference between the current heading and the target heading > TURN_THRESHOLD_DEGREES,
@@ -121,7 +123,7 @@ public class ColorLimelightToTeleOpDrive extends OpMode {
          * Forward power calculations
          */
         double forwardPower = 0;
-        double distanceTraveledCM = LimelightHardware.distanceBetweenPosesCM(targetStartingPedroPose, follower.getPose());
+        double distanceTraveledCM = LimelightHardware.distanceBetweenPosesCM(targetStartingPedroPose, follower.pose());
         double distanceRemainingCM = targetDistanceCM - distanceTraveledCM;
         /*
          * If the remaining distance is greater than DISTANCE_THRESHOLD_CM,
@@ -137,7 +139,7 @@ public class ColorLimelightToTeleOpDrive extends OpMode {
          */
         else if (wasMovingForward) {
             llHardware.resetTy();
-            timer.resetTimer();
+            timer.reset();
             forwardPower = 0;
             wasMovingForward = false;
             isStopped = false;
@@ -146,7 +148,7 @@ public class ColorLimelightToTeleOpDrive extends OpMode {
          * Apply some braking to make the robot stop more quickly.
          */
         else if (!isStopped) {
-            if (timer.getElapsedTime() < BRAKING_DURATION_MS) {
+            if (timer.milliseconds() < BRAKING_DURATION_MS) {
                 forwardPower = BRAKING_POWER;
             }
             else {
@@ -161,7 +163,7 @@ public class ColorLimelightToTeleOpDrive extends OpMode {
         else {
             //If smoothedTy is 0 (i.e., we don't see a target), the target distance is 0.
             targetDistanceCM = smoothedTy == 0 ? 0 : llHardware.distanceCM(smoothedTy);
-            targetStartingPedroPose = follower.getPose();
+            targetStartingPedroPose = follower.pose();
         }
         /****************************************************************************************/
         telemetry.addLine();
@@ -187,7 +189,7 @@ public class ColorLimelightToTeleOpDrive extends OpMode {
         telemetry.addData("Distance using Ty", distance);
 
         if (isFollowing) {
-            follower.setTeleOpDrive(forwardPower, 0, turnPower);
+            follower.manual(forwardPower, 0, turnPower);
         }
         robotLog("Target Heading: %.2f, Current Heading: %.2f, Angle Remaining: %.2f, Turning Power: %.2f|Target Distance: %.2f, Distance Traveled: %.2f, Distance Remaining: %.2f, Forward Power: %.3f",
                 targetPedroHeadingDegrees, currentPedroHeadingDegrees, angleRemaining, turnPower, targetDistanceCM, distanceTraveledCM, distanceRemainingCM, forwardPower);
@@ -214,5 +216,10 @@ public class ColorLimelightToTeleOpDrive extends OpMode {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private ForesightConfig getForesightConfig() {
+        Foresight foresight = (Foresight)follower.algorithm();
+        return foresight.config;
     }
 }

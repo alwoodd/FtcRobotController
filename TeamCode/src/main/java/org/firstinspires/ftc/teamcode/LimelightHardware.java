@@ -1,6 +1,6 @@
 package org.firstinspires.ftc.teamcode;
 
-import com.pedropathing.geometry.Pose;
+import com.pedropathing.math.Pose;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
@@ -198,8 +198,8 @@ public class LimelightHardware {
      * @return distance in CM
      */
     public static double distanceBetweenPosesCM(Pose startPose, Pose endPose) {
-        double distanceX = endPose.getX() - startPose.getX();
-        double distanceY = endPose.getY() - startPose.getY();
+        double distanceX = endPose.x() - startPose.x();
+        double distanceY = endPose.y() - startPose.y();
 
         //Distance in inches
         double distance = Math.sqrt((distanceX * distanceX) + (distanceY * distanceY));

@@ -1,7 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.pedropathing.follower.Follower;
-import com.pedropathing.geometry.Pose;
+import com.pedropathing.math.Pose;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
@@ -25,7 +25,7 @@ public class AprilTagLimelightTest extends OpMode {
         PedroPathConfiguration pedroPathConfiguration = new PedroPathConfiguration(this);
         follower = pedroPathConfiguration.getFollower();
         Pose startPose = new Pose(85.0, 8.5, Math.toRadians(90));
-        follower.setStartingPose(startPose);
+        follower.setPose(startPose); //Starting Pose
 
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
         limelight.pipelineSwitch(8);
@@ -64,9 +64,9 @@ public class AprilTagLimelightTest extends OpMode {
             llYaw = pose3D.getOrientation().getYaw();
 
             Pose pedroPose = pose3DToPedroPose(pose3D);
-            pedroX = pedroPose.getX();
-            pedroY = pedroPose.getY();
-            pedroHeading = pedroPose.getHeading();
+            pedroX = pedroPose.x();
+            pedroY = pedroPose.y();
+            pedroHeading = pedroPose.heading();
         }
 
         telemetry.addLine(resultStatus);

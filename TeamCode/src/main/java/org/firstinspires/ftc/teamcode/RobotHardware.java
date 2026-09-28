@@ -124,17 +124,16 @@ public class RobotHardware {
      * Call init() to initialize all the robot's hardware.
      */
     private void init() {
+/*
         initServos();
         initSensors();
         initMotors();
-/*
         initColorSensor();
         initAnalogInputs();
         initIMU();
-*/
         assert liftArmMotor != null;
         armLift = new ArmLift(liftArmMotor, armLimitSensor);
-
+*/
         myOpMode.telemetry.addData(">", "Hardware Initialized");
         myOpMode.telemetry.update();
     }

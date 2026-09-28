@@ -1,7 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.pedropathing.follower.Follower;
-import com.pedropathing.geometry.Pose;
+import com.pedropathing.math.Pose;
 import com.pedropathing.paths.Path;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -50,7 +50,7 @@ public class CampAutonomous extends LinearOpMode {
         actionStep = actionSteps.iterator();
         currentAction = actionStep.hasNext() ? actionStep.next() : 99;
 
-        follower.setStartingPose(TeamPoses.startPose);
+        follower.setPose(TeamPoses.startPose); //Starting pose
 
         waitForStart();
 

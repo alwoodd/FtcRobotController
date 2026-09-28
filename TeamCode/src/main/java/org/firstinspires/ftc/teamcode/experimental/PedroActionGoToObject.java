@@ -1,8 +1,8 @@
 package org.firstinspires.ftc.teamcode.experimental;
 
 import com.pedropathing.follower.Follower;
-import com.pedropathing.geometry.Pose;
-import com.pedropathing.util.Timer;
+import com.pedropathing.math.Pose;
+import com.pedropathing.utils.Timer;
 
 import org.firstinspires.ftc.teamcode.LimelightHardware;
 
@@ -56,7 +56,7 @@ public class PedroActionGoToObject implements PedroAction {
 
         turnPower = calculateTurningPower();
         forwardPower = calculateForwardPower();
-        follower.setTeleOpDrive(forwardPower, 0, turnPower);
+        follower.manual(forwardPower, 0, turnPower);
     }
 
     /**
@@ -67,11 +67,11 @@ public class PedroActionGoToObject implements PedroAction {
         boolean isComplete = false;
 
         if (turnPower != 0 && forwardPower != 0) {
-            movementTimer.resetTimer();
+            movementTimer.reset();
         }
-        else if (movementTimer.getElapsedTime() > MOVEMENT_DURATION_MS) {
+        else if (movementTimer.milliseconds() > MOVEMENT_DURATION_MS) {
             isComplete = true;
-            movementTimer.resetTimer();
+            movementTimer.reset();
         }
 
         return isComplete;
@@ -87,8 +87,8 @@ public class PedroActionGoToObject implements PedroAction {
      * This is intended to be called *once*.
      */
     private void initialize() {
-        targetStartingPedroPose = follower.getPose();
-        targetPedroHeadingDegrees = Math.toDegrees(follower.getHeading());
+        targetStartingPedroPose = follower.pose();
+        targetPedroHeadingDegrees = Math.toDegrees(follower.pose().heading());
         targetDistanceCM = 0;
         wasTurning = false;
         wasMovingForward = false;
@@ -96,14 +96,13 @@ public class PedroActionGoToObject implements PedroAction {
         brakingTimer = new Timer();
         movementTimer = new Timer();
         llHardware.beginSearch();
-        follower.startTeleOpDrive(true);
 
         isInitialized = true;
     }
 
     private double calculateTurningPower() {
         turnPower = 0; //Negative turns right, positive left.
-        double currentPedroHeadingDegrees = Math.toDegrees(follower.getHeading());
+        double currentPedroHeadingDegrees = Math.toDegrees(follower.pose().heading());
         double angleRemaining = targetPedroHeadingDegrees - currentPedroHeadingDegrees;
         /*
          * If the difference between the current heading and the target heading > TURN_THRESHOLD_DEGREES,
@@ -133,7 +132,7 @@ public class PedroActionGoToObject implements PedroAction {
 
     private double calculateForwardPower() {
         forwardPower = 0;
-        double distanceTraveledCM = LimelightHardware.distanceBetweenPosesCM(targetStartingPedroPose, follower.getPose());
+        double distanceTraveledCM = LimelightHardware.distanceBetweenPosesCM(targetStartingPedroPose, follower.pose());
         double distanceRemainingCM = targetDistanceCM - distanceTraveledCM;
         /*
          * If the remaining distance is greater than DISTANCE_THRESHOLD_CM,
@@ -151,7 +150,7 @@ public class PedroActionGoToObject implements PedroAction {
          */
         else if (wasMovingForward) {
             llHardware.resetTy();
-            brakingTimer.resetTimer();
+            brakingTimer.reset();
             forwardPower = 0;
             wasMovingForward = false;
             isStopped = false;
@@ -160,7 +159,7 @@ public class PedroActionGoToObject implements PedroAction {
          * Apply some braking to make the robot stop more quickly.
          */
         else if (!isStopped) {
-            if (brakingTimer.getElapsedTime() < BRAKING_DURATION_MS) {
+            if (brakingTimer.milliseconds() < BRAKING_DURATION_MS) {
                 forwardPower = BRAKING_POWER;
             }
             else {
@@ -176,7 +175,7 @@ public class PedroActionGoToObject implements PedroAction {
             double smoothedTy = llHardware.getSmoothedTy();
             //If smoothedTy is 0 (i.e., we don't see a target), the target distance is 0.
             targetDistanceCM = smoothedTy == 0 ? 0 : llHardware.distanceCM(smoothedTy);
-            targetStartingPedroPose = follower.getPose();
+            targetStartingPedroPose = follower.pose();
         }
 
         return forwardPower;

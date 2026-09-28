@@ -27,7 +27,6 @@ public class CampAutonomousWithPedroActions extends LinearOpMode {
     private PedroPathTelemetry pedroPathTelemetry;
     private PedroSleep pedroSleep;
 
-    //private List<PedroAction> actionSteps;
     private PedroActionManager actionManager;
 
     private final double POLLEN_PICKUP_SPEED = .25;
@@ -45,7 +44,6 @@ public class CampAutonomousWithPedroActions extends LinearOpMode {
         pedroPather = new PedroPather(AllianceColor.BLUE, AllianceColor.BLUE);
         pedroMotion = new PedroMotion(follower);
         pedroSleep = new PedroSleep(follower);
-        //actionSteps = new ArrayList<>();
         actionManager = new PedroActionManager();
         robot = new RobotHardware(this);
 
@@ -54,11 +52,10 @@ public class CampAutonomousWithPedroActions extends LinearOpMode {
         if (isStopRequested()) return;
 
         pedroPathTelemetry = new PedroPathTelemetry(telemetry, follower, AllianceColor.RED);
-        //Iterator<PedroAction> actionStep = actionSteps.iterator();
         PedroAction currentAction = actionManager.next();// = actionStep.hasNext() ? actionStep.next() : new PedroNoAction();
         llHardware.setPipeLineNumber(POLLEN_PIPELINE);
         pedroPathTelemetry.pathTelemetry(currentAction.getDescription());
-        follower.setStartingPose(TeamPoses.startPose);
+        follower.setPose(TeamPoses.startPose); //Set starting Pose.
 
         waitForStart();
 
@@ -80,9 +77,9 @@ public class CampAutonomousWithPedroActions extends LinearOpMode {
 
     private void depositPollen() {
         pedroPathTelemetry.pathTelemetry("Depositing pollen");
-        robot.setArmTo(ArmPosition.HIGH);
+        //robot.setArmTo(ArmPosition.HIGH);
         //robot.flickBucket();
-        robot.setArmTo(ArmPosition.PARKED);
+        //robot.setArmTo(ArmPosition.PARKED);
         pedroSleep.sleep(2000);
     }
 
@@ -137,13 +134,13 @@ public class CampAutonomousWithPedroActions extends LinearOpMode {
         llHardware.endSearch();
         switch (tagId) {
             case 20:
-                actionManager.add(new PedroActionPath("Going to left side pollen",
+                actionManager.add(new PedroActionWithRunnable("Going to left side pollen",
                     pedroPather.pathBetween(TeamPoses.startPose, TeamPoses.beforeStartLeftPollenPose),
-                    pedroMotion));
-                actionManager.add(new PedroActionWithRunnable("Picking up left pollen",
+                    pedroMotion, this::intakeOn));
+                actionManager.add(new PedroActionPath("Picking up left pollen",
                     pedroPather.pathBetween(TeamPoses.startLeftPollenPose, TeamPoses.endLeftPollenPose,
                     HeadingInterpolationType.TANGENT),
-                    pedroMotion, POLLEN_PICKUP_SPEED, this::intakeOn));
+                    pedroMotion, POLLEN_PICKUP_SPEED));
                 actionManager.add(new PedroActionWithRunnable("Going to flowers",
                     pedroPather.pathBetween(TeamPoses.endLeftPollenPose, TeamPoses.endDepositPollenPose),
                     pedroMotion, this::depositPollen/*robot::releaseDrone*/));

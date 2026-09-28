@@ -1,6 +1,6 @@
 package org.firstinspires.ftc.teamcode.teamPedroPathing;
 
-import com.pedropathing.geometry.Pose;
+import com.pedropathing.math.Pose;
 
 import org.lhssa.ftc.teamcode.pedroPathing.AllianceColor;
 

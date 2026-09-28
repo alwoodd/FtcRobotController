@@ -1,7 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.pedropathing.follower.Follower;
-import com.pedropathing.geometry.Pose;
+import com.pedropathing.math.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -62,7 +62,7 @@ public class DecodeAutonomousOpMode extends LinearOpMode {
         pedroTelemetry = new PedroPathTelemetry(telemetry, follower, selectedColor);
         PedroTeleopData.allianceColor = selectedColor;
 
-        follower.setStartingPose(teamPaths.normalizePose(startPose));
+        follower.setPose(teamPaths.normalizePose(startPose)); //Set starting Pose.
 
         waitForStart();
 
@@ -73,7 +73,7 @@ public class DecodeAutonomousOpMode extends LinearOpMode {
             pedroTelemetry.pathTelemetry(pedroMessage);
         }
 
-        PedroTeleopData.startingPose = follower.getPose();
+        PedroTeleopData.startingPose = follower.pose();
     }
 
     private boolean performActions() {
