@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.experimental;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.paths.Path;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.RobotLog;
 
@@ -19,6 +20,7 @@ import org.lhssa.ftc.teamcode.pedroPathing.PedroPather;
 import org.lhssa.ftc.teamcode.pedroPathing.PedroSleep;
 
 @Autonomous
+@Disabled
 public class PedroMotionOpModeQandD extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {

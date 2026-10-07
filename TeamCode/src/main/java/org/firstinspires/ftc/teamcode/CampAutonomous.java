@@ -2,7 +2,6 @@ package org.firstinspires.ftc.teamcode;
 
 import com.pedropathing.follower.Follower;
 import com.pedropathing.math.Pose;
-import com.pedropathing.paths.Path;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
@@ -11,6 +10,7 @@ import org.firstinspires.ftc.teamcode.teamPedroPathing.TeamPoses;
 import org.lhssa.ftc.teamcode.pedroPathing.AllianceColor;
 import org.lhssa.ftc.teamcode.pedroPathing.HeadingInterpolationType;
 import org.lhssa.ftc.teamcode.pedroPathing.PedroMotion;
+import org.lhssa.ftc.teamcode.pedroPathing.PedroPathData;
 import org.lhssa.ftc.teamcode.pedroPathing.PedroPathTelemetry;
 import org.lhssa.ftc.teamcode.pedroPathing.PedroPather;
 import org.lhssa.ftc.teamcode.pedroPathing.PedroSleep;
@@ -62,7 +62,7 @@ public class CampAutonomous extends LinearOpMode {
     }
 
     private boolean performActions() {
-        Path path;
+        PedroPathData path;
         boolean isDone = false;
         String pedroMessage = "Unknown";
 
