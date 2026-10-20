@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.experimental;
 
 import com.pedropathing.follower.Follower;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.firstinspires.ftc.teamcode.LimelightHardware;
@@ -21,6 +22,7 @@ import org.lhssa.ftc.teamcode.pedroActions.PedroActionManager;
 import org.lhssa.ftc.teamcode.pedroActions.PedroActionWithRunnable;
 
 @Autonomous
+@Disabled
 public class CampAutonomousWithPedroActions extends LinearOpMode {
     private PedroPather pedroPather;
     private PedroMotion pedroMotion;
@@ -41,7 +43,7 @@ public class CampAutonomousWithPedroActions extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
 
         Follower follower = new PedroPathConfiguration(this).getFollower();
-        pedroPather = new PedroPather(AllianceColor.BLUE, AllianceColor.BLUE);
+        pedroPather = new PedroPather(AllianceColor.BLUE, AllianceColor.BLUE, PedroPather::FlipRoutineAlliancesOnSameSide);
         pedroMotion = new PedroMotion(follower);
         pedroSleep = new PedroSleep(follower);
         actionManager = new PedroActionManager();

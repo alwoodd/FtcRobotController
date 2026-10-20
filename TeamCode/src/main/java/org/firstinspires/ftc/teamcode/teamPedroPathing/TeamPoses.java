@@ -10,7 +10,13 @@ import org.lhssa.ftc.teamcode.pedroPathing.AllianceColor;
  */
 public class TeamPoses {
     public static AllianceColor canonicalColor = AllianceColor.BLUE;
+    /********************BIOBUZZ********************************************************************/
+    public static Pose startBiobuzz = new Pose(85.5, 132.3, Math.toRadians(-90));
+    public static Pose beginGardenPickup = new Pose(128.3, 132.3, Math.toRadians(0));
+    public static Pose endGardenPickup = new Pose(133.1, 132.3, Math.toRadians(0));
+    public static Pose parkBiobuzz = new Pose(129.7, 49.4, Math.toRadians(119));
 
+    /********************CAMP***********************************************************************/
     public static Pose startPose = new Pose(56, 8, Math.toRadians(90));
     public static Pose beforeStartLeftPollenPose = new Pose(24,46, Math.toRadians(130));
     public static Pose startLeftPollenPose = new Pose(24, 46, Math.toRadians(90));
@@ -24,7 +30,7 @@ public class TeamPoses {
     public static Pose startCornerPollenPose = new Pose(120, 8, 0);
     public static Pose endCornerPollenPose = new Pose(130, 8, 0);
 
-    /***********************************************************************************************/
+    /*********************DECODE*********************************************************************/
     public static Pose frontWallStartingPose = new Pose(85.0, 8.5, Math.toRadians(90));
     public static Pose backWallStartingPose = new Pose(121.3, 125.3, Math.toRadians(-142));
     public static Pose backGoalShootPose = new Pose(108.4, 120.3, Math.toRadians(28));

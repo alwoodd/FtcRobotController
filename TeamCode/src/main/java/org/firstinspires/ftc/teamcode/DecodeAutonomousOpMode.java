@@ -57,7 +57,7 @@ public class DecodeAutonomousOpMode extends LinearOpMode {
 
         initSetup();
 
-        teamPaths = new PedroPather(TeamPoses.canonicalColor, selectedColor);
+        teamPaths = new PedroPather(TeamPoses.canonicalColor, selectedColor, PedroPather::FlipRoutineAlliancesOnSameSide);
         setPoses();
         pedroTelemetry = new PedroPathTelemetry(telemetry, follower, selectedColor);
         PedroTeleopData.allianceColor = selectedColor;

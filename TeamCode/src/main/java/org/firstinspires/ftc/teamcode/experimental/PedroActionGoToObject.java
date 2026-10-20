@@ -82,6 +82,11 @@ public class PedroActionGoToObject implements PedroAction {
         return description;
     }
 
+    @Override
+    public void reset() {
+        //Do Nothing
+    }
+
     /**
      * Initialize various values and settings.
      * This is intended to be called *once*.

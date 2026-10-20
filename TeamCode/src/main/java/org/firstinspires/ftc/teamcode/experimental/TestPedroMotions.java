@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.experimental;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.math.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroPathConfiguration;
@@ -14,6 +15,7 @@ import org.lhssa.ftc.teamcode.pedroPathing.PedroPather;
 import org.lhssa.ftc.teamcode.pedroPathing.PedroSleep;
 
 @Autonomous
+@Disabled
 public class TestPedroMotions extends LinearOpMode {
     Pose startPose = new Pose(56, 8, Math.toRadians(90));
     Pose endPose1 = new Pose(56, 20, Math.toRadians(90));
@@ -27,7 +29,7 @@ public class TestPedroMotions extends LinearOpMode {
 
         PedroPathTelemetry pedroPathTelemetry = new PedroPathTelemetry(telemetry, follower, AllianceColor.RED);
 
-        PedroPather pather = new PedroPather(AllianceColor.RED, AllianceColor.RED);
+        PedroPather pather = new PedroPather(AllianceColor.RED, AllianceColor.RED, PedroPather::FlipRoutineAlliancesOnSameSide);
         PedroMotion motion = new PedroMotion(follower);
         //PedroSleep pedroSleep = new PedroSleep(follower);
 

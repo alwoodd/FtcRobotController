@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.math.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.firstinspires.ftc.teamcode.teamPedroPathing.PedroPathConfiguration;
@@ -21,6 +22,7 @@ import java.util.Iterator;
 import java.util.List;
 
 @Autonomous
+@Disabled
 public class CampAutonomous extends LinearOpMode {
     private PedroPather pedroPather;
     private PedroMotion pedroMotion;
@@ -38,7 +40,7 @@ public class CampAutonomous extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
 
         Follower follower = new PedroPathConfiguration(this).getFollower();
-        pedroPather = new PedroPather(AllianceColor.BLUE, AllianceColor.BLUE);
+        pedroPather = new PedroPather(AllianceColor.BLUE, AllianceColor.BLUE, PedroPather::FlipRoutineAlliancesOnSameSide);
         pedroMotion = new PedroMotion(follower);
         pedroSleep = new PedroSleep(follower);
         actionSteps = new ArrayList<>();

@@ -5,12 +5,14 @@ import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.util.RobotLog;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class LimelightHardware {
     private final double SMOOTHING_FACTOR = .1;
+    private final long LLRESULT_STALENESS_THRESHOLD = 20;
     private final Limelight3A limelight;
     private boolean isSearching = false;
     private final Smoothifier tXsmoothifier;
@@ -66,6 +68,7 @@ public class LimelightHardware {
             startLimelight();
             isAutoStarted = true;
         }
+//RobotLog.ii("LimelightHardware", "beginSearch()");
     }
 
     /**
@@ -86,22 +89,25 @@ public class LimelightHardware {
         fiducialResults = emptyFiducialList;
         if (isSearching) {
             LLResult llResult = limelight.getLatestResult();
+//    RobotLog.ii("LimelightHardware.update()", "staleness: %d", llResult.getStaleness());
+            //Ignore llResult that is too stale (old).
+            if (llResult.getStaleness() < LLRESULT_STALENESS_THRESHOLD) {
+                if (llResult.isValid()) {
+                    rawTx = llResult.getTx();
+                    rawTa = llResult.getTa();
+                    rawTy = llResult.getTy();
+                    if (rawTy != 0) {
+                        smoothedTy = tYsmoothifier.smooth(rawTy);
+                    }
+                    if (rawTx != 0) {
+                        smoothedTx = tXsmoothifier.smooth(rawTx);
+                    }
+                    if (rawTa != 0) {
+                        smoothedTa = tAsmoothifier.smooth(rawTa);
+                    }
 
-            if (llResult.isValid()) {
-                rawTx = llResult.getTx();
-                rawTa = llResult.getTa();
-                rawTy = llResult.getTy();
-                if (rawTy != 0) {
-                    smoothedTy = tYsmoothifier.smooth(rawTy);
+                    fiducialResults = llResult.getFiducialResults();
                 }
-                if (rawTx != 0) {
-                    smoothedTx = tXsmoothifier.smooth(rawTx);
-                }
-                if (rawTa != 0) {
-                    smoothedTa = tAsmoothifier.smooth(rawTa);
-                }
-
-                fiducialResults = llResult.getFiducialResults();
             }
         }
     }
@@ -240,7 +246,7 @@ public class LimelightHardware {
     }
 
     /**
-     * Return an array of AprilTag Ids seen during the last call to upate().
+     * Return an array of AprilTag Ids seen during the last call to update().
      * @return Integer[]
      */
     public Integer[] getTagIds() {
@@ -278,8 +284,6 @@ public class LimelightHardware {
                 initPrevSmoothed = false;
             }
             double smoothValue = (this.alpha * rawValue) + (1 - this.alpha) * prevSmoothed;
-//            RobotLog.ii("Smoothifier", "rawValue: %.2f, prevSmoothed: %.2f, smoothValue: %.2f",
-//                    rawValue, prevSmoothed, smoothValue);
             prevSmoothed = smoothValue;
 
             return smoothValue;
