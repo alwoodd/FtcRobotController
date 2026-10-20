@@ -18,6 +18,9 @@ import org.lhssa.ftc.teamcode.pedroPathing.PedroMotion;
 import org.lhssa.ftc.teamcode.pedroPathing.PedroPathTelemetry;
 import org.lhssa.ftc.teamcode.pedroPathing.PedroPather;
 
+/*
+ * This OpMode demonstrates how to use pedroActions and pedroPathing from the PedroLib module.
+ */
 @Autonomous
 public class BioBuzzAutonomous extends OpMode {
     private AllianceColor allianceColor = AllianceColor.BLUE;
@@ -31,8 +34,9 @@ public class BioBuzzAutonomous extends OpMode {
     private LimelightHardware limelight;
     private final int RED_LIMELIGHT_PIPELINE = 3;
     private final int BLUE_LIMELIGHT_PIPELINE = 2;
-    private Timer shootTimer;
+    private Timer shootTimer; //Emulates using a shooter
 
+    //All of these PedroActions are created once, then used in more than one place.
     private PedroActionRunUntilComplete shooterAction;
     private PedroActionRunUntilComplete waitForHiveDownAction;
     private PedroActionPath parkAction;
@@ -75,6 +79,10 @@ public class BioBuzzAutonomous extends OpMode {
     public void loop() {
         follower.update();
 
+        /*
+         * This PedroTimerAction is run on every loop.
+         * Once it isComplete(), ignoreRemainingActions() and park.
+         */
         timeToParkAction.update();
         if (timeToParkAction.isComplete()) {
             actionManager.ignoreRemainingActions();
@@ -88,21 +96,20 @@ public class BioBuzzAutonomous extends OpMode {
                 currentAction = actionManager.next();
                 pedroTelemetry.pathTelemetry(currentAction.getDescription());
             }
-
-        else {
-            requestOpModeStop();
+            else {
+                requestOpModeStop(); //Stop when no more actions.
             }
         }
     }
 
     /**
-     * Call this repeatedly.
-     * @return true when shooting complete
+     * This is called repeatedly by shooterAction until the shooter reports isComplete().
+     * @return true when shooting is complete
      */
     private boolean shootUntilComplete() {
         boolean isComplete;
 
-        if (!shooterAction.isStarted() /*&& !shooterAction.isComplete()*/) {
+        if (!shooterAction.isStarted()) {
                 //shoot motor on:
                 shootTimer.reset();
                 shooterAction.start();
@@ -114,12 +121,16 @@ public class BioBuzzAutonomous extends OpMode {
         return isComplete;
     }
 
+    /**
+     * This is called repeatedly by waitForHiveDownAction until the hive is down.
+     * @return true when the limelight detects the hive is up
+     */
     private boolean waitUntilHiveDown() {
         boolean isHiveDown = false;
 
-        if (!this.waitForHiveDownAction.isStarted() /*&& !this.waitForHiveDownAction.isComplete()*/) {
+        if (!waitForHiveDownAction.isStarted()) {
            limelight.beginSearch();
-           this.waitForHiveDownAction.start();
+           waitForHiveDownAction.start();
         }
 
         limelight.update();
@@ -130,6 +141,9 @@ public class BioBuzzAutonomous extends OpMode {
         return isHiveDown;
     }
 
+    /**
+     * Configure OpMode for the match
+     */
     private void initSetup() {
         telemetry.addLine("Press X to toggle Alliance");
         telemetry.addData("Current alliance", allianceColor.toString());
@@ -141,6 +155,9 @@ public class BioBuzzAutonomous extends OpMode {
         frontBackLocation = FrontBackLocation.INSTANCE.toggleLocation(gamepad1.yWasPressed(), frontBackLocation);
     }
 
+    /**
+     * Add all the PedroActions in the order they should run to the PedroActionManager.
+     */
     private void actionSetup() {
         if (allianceColor == AllianceColor.BLUE) {
             if (frontBackLocation == FrontBackLocation.BACK) {
@@ -167,6 +184,9 @@ public class BioBuzzAutonomous extends OpMode {
         }
     }
 
+    /**
+     * Common sequence of actions for all matches.
+     */
     private void addCommonActions() {
         actionManager.add(new PedroActionPath("Going to garden",
                 pedroPather.pathBetween(TeamPoses.startBiobuzz, TeamPoses.beginGardenPickup, HeadingInterpolationType.TANGENT),
