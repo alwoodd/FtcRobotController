@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.pedropathing.follower.Follower;
+import com.pedropathing.math.Pose;
 import com.pedropathing.utils.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
@@ -39,9 +40,12 @@ public class BioBuzzAutonomous extends OpMode {
     //All of these PedroActions are created once, then used in more than one place.
     private PedroActionRunUntilComplete shooterAction;
     private PedroActionRunUntilComplete waitForHiveDownAction;
-    private PedroActionPath parkAction;
+//    private PedroActionPath parkAction;
     private PedroTimerAction timeToParkAction;
+
     private final double MAX_SECONDS_BEFORE_PARK = 25;
+    private Pose startPose;
+    private PedroAction parkAction;
 
     @Override
     public void init() {
@@ -61,14 +65,11 @@ public class BioBuzzAutonomous extends OpMode {
 
     public void start() {
         pedroPather = new PedroPather(TeamPoses.canonicalColor, allianceColor, PedroPather::FlipRoutineAlliancesOnOppositeSides);
-        follower.setPose(pedroPather.normalizePose(TeamPoses.startBiobuzz));
-
         pedroTelemetry = new PedroPathTelemetry(telemetry, follower, allianceColor);
         limelight = new LimelightHardware(this, allianceColor == AllianceColor.BLUE ? BLUE_LIMELIGHT_PIPELINE : RED_LIMELIGHT_PIPELINE);
-        parkAction = new PedroActionPath("Parking",
-                pedroPather.pathBetween(TeamPoses.startBiobuzz, TeamPoses.parkBiobuzz, HeadingInterpolationType.TANGENT), pedroMotion);
 
         actionSetup();
+        follower.setPose(startPose);
 
         //Prime currentAction
         currentAction = actionManager.next();
@@ -159,46 +160,33 @@ public class BioBuzzAutonomous extends OpMode {
      * Add all the PedroActions in the order they should run to the PedroActionManager.
      */
     private void actionSetup() {
-        if (allianceColor == AllianceColor.BLUE) {
-            if (frontBackLocation == FrontBackLocation.BACK) {
-                actionManager.add(this.shooterAction);
-                addCommonActions();
-            }
-            else  {
-                actionManager.add(this.waitForHiveDownAction);
-                actionManager.add(this.shooterAction);
-                addCommonActions();
-            }
-        }
-        //AllianceColor.RED
-        else {
-            if (frontBackLocation == FrontBackLocation.FRONT) {
-                actionManager.add(this.shooterAction);
-                addCommonActions();
-            }
-            else {
-                actionManager.add(this.waitForHiveDownAction);
-                actionManager.add(this.shooterAction);
-                addCommonActions();
-            }
-        }
-    }
-
-    /**
-     * Common sequence of actions for all matches.
-     */
-    private void addCommonActions() {
-        actionManager.add(new PedroActionPath("Going to garden",
-                pedroPather.pathBetween(TeamPoses.startBiobuzz, TeamPoses.beginGardenPickup, HeadingInterpolationType.TANGENT),
+        //This is all from the BLUE PoV.
+        if ((allianceColor == AllianceColor.BLUE && frontBackLocation == FrontBackLocation.BACK) ||
+            (allianceColor == AllianceColor.RED && frontBackLocation == FrontBackLocation.FRONT)) {
+            startPose = pedroPather.normalizePose(TeamPoses.shootBackBiobuzz);
+            actionManager.add(this.shooterAction);
+            actionManager.add(new PedroActionPath("Going to garden",
+                pedroPather.pathBetween(TeamPoses.shootBackBiobuzz, TeamPoses.beginGardenPickup, HeadingInterpolationType.TANGENT),
                 pedroMotion));
-        actionManager.add(new PedroActionPath("Picking up pollen from garden",
+            actionManager.add(new PedroActionPath("Picking up pollen from garden",
                 pedroPather.pathBetween(TeamPoses.beginGardenPickup, TeamPoses.endGardenPickup, HeadingInterpolationType.TANGENT),
                 pedroMotion,.1));
-        actionManager.add(new PedroActionPath("Back to shoot position",
-                pedroPather.pathBetween(TeamPoses.endGardenPickup, TeamPoses.startBiobuzz, HeadingInterpolationType.LINEAR),
+            actionManager.add(new PedroActionPath("Back to shoot position",
+                pedroPather.pathBetween(TeamPoses.endGardenPickup, TeamPoses.shootBackBiobuzz, HeadingInterpolationType.LINEAR),
                 pedroMotion));
-        actionManager.add(this.waitForHiveDownAction);
-        actionManager.add(this.shooterAction);
-        actionManager.add(this.parkAction);
+            actionManager.add(this.waitForHiveDownAction);
+            actionManager.add(this.shooterAction);
+            parkAction = new PedroActionPath("Parking",
+                pedroPather.pathBetween(TeamPoses.shootBackBiobuzz, TeamPoses.parkBiobuzz), pedroMotion);
+            actionManager.add(parkAction);
+        }
+        else {
+            startPose = pedroPather.normalizePose(TeamPoses.shootFrontBiobuzz);
+            actionManager.add(this.waitForHiveDownAction);
+            actionManager.add(this.shooterAction);
+            parkAction = new PedroActionPath("Parking",
+                pedroPather.pathBetween(TeamPoses.shootFrontBiobuzz, TeamPoses.parkBiobuzz), pedroMotion);
+            actionManager.add(parkAction);
+        }
     }
 }
