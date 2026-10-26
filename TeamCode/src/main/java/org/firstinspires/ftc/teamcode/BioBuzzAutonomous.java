@@ -40,7 +40,6 @@ public class BioBuzzAutonomous extends OpMode {
     //All of these PedroActions are created once, then used in more than one place.
     private PedroActionRunUntilComplete shooterAction;
     private PedroActionRunUntilComplete waitForHiveDownAction;
-//    private PedroActionPath parkAction;
     private PedroTimerAction timeToParkAction;
 
     private final double MAX_SECONDS_BEFORE_PARK = 25;
@@ -79,7 +78,6 @@ public class BioBuzzAutonomous extends OpMode {
     @Override
     public void loop() {
         follower.update();
-
         /*
          * This PedroTimerAction is run on every loop.
          * Once it isComplete(), ignoreRemainingActions() and park.
@@ -176,8 +174,9 @@ public class BioBuzzAutonomous extends OpMode {
                 pedroMotion));
             actionManager.add(this.waitForHiveDownAction);
             actionManager.add(this.shooterAction);
-            parkAction = new PedroActionPath("Parking",
-                pedroPather.pathBetween(TeamPoses.shootBackBiobuzz, TeamPoses.parkBiobuzz), pedroMotion);
+            parkAction = new PedroActionPath("Parking!",
+                pedroPather.pathBetween(HeadingInterpolationType.TANGENT, TeamPoses.shootBackBiobuzz, TeamPoses.parkMidBiobuzz, TeamPoses.parkEndBiobuzz),
+                pedroMotion);
             actionManager.add(parkAction);
         }
         else {
@@ -185,7 +184,7 @@ public class BioBuzzAutonomous extends OpMode {
             actionManager.add(this.waitForHiveDownAction);
             actionManager.add(this.shooterAction);
             parkAction = new PedroActionPath("Parking",
-                pedroPather.pathBetween(TeamPoses.shootFrontBiobuzz, TeamPoses.parkBiobuzz), pedroMotion);
+                pedroPather.pathBetween(TeamPoses.shootFrontBiobuzz, TeamPoses.parkEndBiobuzz), pedroMotion);
             actionManager.add(parkAction);
         }
     }

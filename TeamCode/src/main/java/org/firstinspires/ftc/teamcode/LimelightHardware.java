@@ -5,7 +5,6 @@ import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-import com.qualcomm.robotcore.util.RobotLog;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -68,7 +67,6 @@ public class LimelightHardware {
             startLimelight();
             isAutoStarted = true;
         }
-//RobotLog.ii("LimelightHardware", "beginSearch()");
     }
 
     /**
@@ -89,7 +87,6 @@ public class LimelightHardware {
         fiducialResults = emptyFiducialList;
         if (isSearching) {
             LLResult llResult = limelight.getLatestResult();
-//    RobotLog.ii("LimelightHardware.update()", "staleness: %d", llResult.getStaleness());
             //Ignore llResult that is too stale (old).
             if (llResult.getStaleness() < LLRESULT_STALENESS_THRESHOLD) {
                 if (llResult.isValid()) {

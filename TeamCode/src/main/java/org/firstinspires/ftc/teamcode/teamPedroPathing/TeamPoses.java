@@ -16,7 +16,8 @@ public class TeamPoses {
     //Only doing garden pickups if starting on hive up side.
     public static Pose beginGardenPickup = new Pose(128.3, 132.3, Math.toRadians(0));
     public static Pose endGardenPickup = new Pose(133.1, 132.3, Math.toRadians(0));
-    public static Pose parkBiobuzz = new Pose(131.2, 36, Math.toRadians(180));
+    public static Pose parkMidBiobuzz = new Pose(126, 114);
+    public static Pose parkEndBiobuzz = new Pose(131.2, 36, Math.toRadians(180));
     public static Pose leftFlowerPose = new Pose(7.8, 46.8, Math.toRadians(180));
     public static Pose rightFlowerPose = new Pose(133, 93.9, Math.toRadians(0));
     public static Pose frontFlowerPose = new Pose(94.2, 8.1, Math.toRadians(-90));

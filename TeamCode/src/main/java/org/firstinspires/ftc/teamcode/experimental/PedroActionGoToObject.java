@@ -145,8 +145,6 @@ public class PedroActionGoToObject implements PedroAction {
          */
         if (distanceRemainingCM > FORWARD_DISTANCE_THRESHOLD_CM) {
             forwardPower = forwardPower(distanceRemainingCM);
-    //RobotLog.ii("Forward Power", "Distance remaining: %.2f; Forward power: %.2f", distanceRemainingCM, forwardPower);
-
             wasMovingForward = true;
         }
         /*
