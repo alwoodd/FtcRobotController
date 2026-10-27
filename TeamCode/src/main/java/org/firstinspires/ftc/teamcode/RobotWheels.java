@@ -112,7 +112,7 @@ public class RobotWheels {
     /**
      * Adjust the baseSpeed by  +/- headingSpeedAdjustment, then set power to the left
      * and right wheels to those powers. Scale down both left and right motor speeds
-     * if either is > 1.0 or < -1.0.
+     * if either is greater than 1.0 or less than -1.0.
      * @param baseSpeed - base speed of the motor to which headingSpeedAdjustment will be applied.
      * @param headingSpeedAdjustment - power adjustment applied to baseSpeed to turn the robot to the desiredHeading.
      */
