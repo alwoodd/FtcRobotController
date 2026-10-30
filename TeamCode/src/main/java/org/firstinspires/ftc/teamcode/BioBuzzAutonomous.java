@@ -18,6 +18,7 @@ import org.lhssa.ftc.teamcode.pedroPathing.HeadingInterpolationType;
 import org.lhssa.ftc.teamcode.pedroPathing.PedroMotion;
 import org.lhssa.ftc.teamcode.pedroPathing.PedroPathTelemetry;
 import org.lhssa.ftc.teamcode.pedroPathing.PedroPather;
+import org.lhssa.ftc.teamcode.pedroPathing.PedroTeleopData;
 
 /*
  * This OpMode demonstrates how to use pedroActions and pedroPathing from the PedroLib module.
@@ -39,7 +40,7 @@ public class BioBuzzAutonomous extends OpMode {
 
     //All of these PedroActions are created once, then used in more than one place.
     private PedroActionRunUntilComplete shooterAction;
-    private PedroActionRunUntilComplete waitForHiveDownAction;
+    private PedroActionRunUntilComplete waitForHiveUpAction;
     private PedroTimerAction timeToParkAction;
 
     private final double MAX_SECONDS_BEFORE_PARK = 25;
@@ -54,7 +55,7 @@ public class BioBuzzAutonomous extends OpMode {
         shootTimer = new Timer();
 
         shooterAction = new PedroActionRunUntilComplete("Shooting...", this::shootUntilComplete);
-        waitForHiveDownAction = new PedroActionRunUntilComplete("Waiting for Hive Down", this::waitUntilHiveDown);
+        waitForHiveUpAction = new PedroActionRunUntilComplete("Waiting for Hive Up", this::waitUntilHiveUp);
         timeToParkAction = new PedroTimerAction("Time to park!", MAX_SECONDS_BEFORE_PARK);
     }
 
@@ -69,6 +70,7 @@ public class BioBuzzAutonomous extends OpMode {
 
         actionSetup();
         follower.setPose(startPose);
+        timeToParkAction.reset();
 
         //Prime currentAction
         currentAction = actionManager.next();
@@ -101,6 +103,11 @@ public class BioBuzzAutonomous extends OpMode {
         }
     }
 
+    public void stop() {
+        PedroTeleopData.allianceColor = allianceColor;
+        PedroTeleopData.startingPose = follower.pose();
+    }
+
     /**
      * This is called repeatedly by shooterAction until the shooter reports isComplete().
      * @return true when shooting is complete
@@ -124,20 +131,20 @@ public class BioBuzzAutonomous extends OpMode {
      * This is called repeatedly by waitForHiveDownAction until the hive is down.
      * @return true when the limelight detects the hive is up
      */
-    private boolean waitUntilHiveDown() {
-        boolean isHiveDown = false;
+    private boolean waitUntilHiveUp() {
+        boolean isHiveUp = false;
 
-        if (!waitForHiveDownAction.isStarted()) {
+        if (!waitForHiveUpAction.isStarted()) {
            limelight.beginSearch();
-           waitForHiveDownAction.start();
+           waitForHiveUpAction.start();
         }
 
         limelight.update();
         if (limelight.getTagIds().length > 0) {
             limelight.endSearch();
-            isHiveDown = true;
+            isHiveUp = true;
         }
-        return isHiveDown;
+        return isHiveUp;
     }
 
     /**
@@ -172,7 +179,7 @@ public class BioBuzzAutonomous extends OpMode {
             actionManager.add(new PedroActionPath("Back to shoot position",
                 pedroPather.pathBetween(TeamPoses.endGardenPickup, TeamPoses.shootBackBiobuzz, HeadingInterpolationType.LINEAR),
                 pedroMotion));
-            actionManager.add(this.waitForHiveDownAction);
+            actionManager.add(this.waitForHiveUpAction);
             actionManager.add(this.shooterAction);
             parkAction = new PedroActionPath("Parking!",
                 pedroPather.pathBetween(HeadingInterpolationType.TANGENT, TeamPoses.shootBackBiobuzz, TeamPoses.parkMidBiobuzz, TeamPoses.parkEndBiobuzz),
@@ -181,7 +188,7 @@ public class BioBuzzAutonomous extends OpMode {
         }
         else {
             startPose = pedroPather.normalizePose(TeamPoses.shootFrontBiobuzz);
-            actionManager.add(this.waitForHiveDownAction);
+            actionManager.add(this.waitForHiveUpAction);
             actionManager.add(this.shooterAction);
             parkAction = new PedroActionPath("Parking",
                 pedroPather.pathBetween(TeamPoses.shootFrontBiobuzz, TeamPoses.parkEndBiobuzz), pedroMotion);

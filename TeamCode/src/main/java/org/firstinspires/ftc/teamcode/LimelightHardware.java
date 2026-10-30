@@ -43,7 +43,7 @@ public class LimelightHardware {
      * @param opMode Instance of OpMode
      * @param pipeLineNumber Initial Limelight pipeline number.
      */
-    public LimelightHardware(OpMode opMode, int pipeLineNumber/*, double minPower, double maxPower*/) {
+    public LimelightHardware(OpMode opMode, int pipeLineNumber) {
         limelight = opMode.hardwareMap.get(Limelight3A.class, "limelight");
         setPipeLineNumber(pipeLineNumber);
 
